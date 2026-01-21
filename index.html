@@ -588,7 +588,7 @@
     function startTimer() {
       if (timer) clearInterval(timer);
       timeLeft = 60;
-      isGameActive = true; // ← 關鍵修正：在此啟用遊戲
+      isGameActive = true; // ← 在這裡啟用遊戲
       updateTimerUI();
       
       timer = setInterval(() => {
@@ -1089,15 +1089,16 @@
       // === 移除 isGameActive = true（由 startTimer 設定）===
     }
 
-    // ===== 播放音效並啟動遊戲（支援快照）=====
+    // ===== 播放音效並啟動遊戲（修正版）=====
     function speakTextAndStartGame(fromUrl = false, useSnapshot = false) {
       initAudioContext();
       
+      // 先同步載入題目
+      loadNewGame(fromUrl, useSnapshot);
+      
       if (!volumeEnabled) {
-        setTimeout(() => {
-          loadNewGame(fromUrl, useSnapshot);
-          startTimer();
-        }, 400);
+        // 靜音模式：直接啟動計時器
+        startTimer();
         return;
       }
 
@@ -1105,13 +1106,15 @@
         const utterance = new SpeechSynthesisUtterance("Ready? Go!");
         utterance.lang = 'en-US';
         utterance.rate = 1.2;
-        speechSynthesis.speak(utterance);
         
-        setTimeout(() => {
-          loadNewGame(fromUrl, useSnapshot);
+        // 使用 onend 事件確保順序
+        utterance.onend = () => {
           startTimer();
-        }, 1000);
+        };
+        
+        speechSynthesis.speak(utterance);
       } else {
+        // 使用 beep 音效替代
         try {
           const ctx = new (window.AudioContext || window.webkitAudioContext)();
           
@@ -1125,6 +1128,7 @@
           oscillator1.start();
           oscillator1.stop(ctx.currentTime + 0.3);
           
+          // "Go!" - 低音（延遲 0.4 秒）
           setTimeout(() => {
             const oscillator2 = ctx.createOscillator();
             const gain2 = ctx.createGain();
@@ -1136,17 +1140,15 @@
             oscillator2.start();
             oscillator2.stop(ctx.currentTime + 0.4);
             
+            // 在 "Go!" 音效結束後才開始遊戲
             setTimeout(() => {
-              loadNewGame(fromUrl, useSnapshot);
               startTimer();
             }, 400);
           }, 400);
         } catch (e) {
           console.log("Audio not supported");
-          setTimeout(() => {
-            loadNewGame(fromUrl, useSnapshot);
-            startTimer();
-          }, 400);
+          // 如果音效不支援，直接開始遊戲
+          startTimer();
         }
       }
     }
@@ -1197,16 +1199,17 @@
       }, 3000);
     }
 
-    // ===== Start! 按鈕定位 =====
+    // ===== Start! 按鈕定位（修正版）=====
     function positionStartButton() {
       const handArea = document.querySelector('.hand-area');
       const overlayContent = document.querySelector('.start-overlay-content');
       
       if (!handArea || !overlayContent) return;
       
+      // 使用 getBoundingClientRect 獲取相對於視窗的位置
       const rect = handArea.getBoundingClientRect();
       overlayContent.style.left = (rect.left + rect.width / 2) + 'px';
-      overlayContent.style.top = (rect.top + rect.height / 2) + 'px';
+      overlayContent.style.top = (rect.top + rect.height / 2 + window.scrollY) + 'px';
     }
 
     window.addEventListener('resize', () => {
@@ -1342,14 +1345,21 @@
       document.getElementById('failureModal').style.display = 'none';
       document.getElementById('instructionsModal').style.display = 'none';
       
+      // 檢查 URL 是否有題目
       const hasUrlPuzzle = parseUrlPuzzle() !== null;
       
       if (hasUrlPuzzle) {
+        // 嘗試從 URL 載入題目
         speakTextAndStartGame(true, false);
       } else {
+        // 正常啟動：顯示 Start! 按鈕
         const overlay = document.getElementById('startOverlay');
         overlay.classList.add('active');
-        positionStartButton();
+        overlay.style.display = 'block'; // 確保顯示
+        // 延遲定位以確保 DOM 已渲染
+        setTimeout(() => {
+          positionStartButton();
+        }, 100);
       }
     });
   </script>
