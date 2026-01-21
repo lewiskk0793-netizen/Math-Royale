@@ -541,50 +541,6 @@
       oscillator.stop(actualStartTime + duration);
     }
 
-    // ===== 語音/音效系統 =====
-    function speakText(text) {
-      initAudioContext();
-
-      if (!volumeEnabled) {
-        setTimeout(() => {
-          loadNewGame();
-          startTimer();
-        }, 400);
-        return false;
-      }
-
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        utterance.rate = 1.2;
-        speechSynthesis.speak(utterance);
-        setTimeout(() => {
-          loadNewGame();
-          startTimer();
-        }, 1000);
-        return true;
-      }
-
-      try {
-        playTone(880, 0.3);
-        setTimeout(() => {
-          playTone(440, 0.4);
-          setTimeout(() => {
-            loadNewGame();
-            startTimer();
-          }, 400);
-        }, 400);
-        return true;
-      } catch (e) {
-        console.log("Audio fallback failed");
-        setTimeout(() => {
-          loadNewGame();
-          startTimer();
-        }, 400);
-        return false;
-      }
-    }
-
     // ===== 計算音效 =====
     function playCalculationSound(operation) {
       initAudioContext();
@@ -632,7 +588,6 @@
     function startTimer() {
       if (timer) clearInterval(timer);
       timeLeft = 60;
-      isGameActive = true;
       updateTimerUI();
       
       timer = setInterval(() => {
@@ -944,88 +899,6 @@
       document.getElementById('failureModal').style.display = 'flex';
     }
 
-    // ===== 遊戲控制 =====
-    function continueChallenge() {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-      
-      document.getElementById('successModal').style.display = 'none';
-      document.getElementById('failureModal').style.display = 'none';
-      
-      currentTarget = null;
-      originalHand = [];
-      score = 0;
-      combo = 0;
-      currentStep = 0;
-      isGameActive = false;
-      timeLeft = 60;
-      
-      document.getElementById('score').textContent = '0';
-      document.getElementById('timeLeft').textContent = '60';
-      document.getElementById('message').textContent = '🎯 點擊第一張卡牌！';
-      document.getElementById('message').className = 'message info';
-      
-      document.getElementById('handArea').innerHTML = '';
-      document.getElementById('targetCard').textContent = '?';
-      
-      setTimeout(() => {
-        loadNewGame();
-        startTimer();
-      }, 500);
-    }
-
-    function restartGame() {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-      
-      document.getElementById('successModal').style.display = 'none';
-      document.getElementById('failureModal').style.display = 'none';
-      
-      if (currentGameSnapshot) {
-        currentTarget = currentGameSnapshot.target;
-        originalHand = [...currentGameSnapshot.hand];
-        score = currentGameSnapshot.score;
-        timeLeft = currentGameSnapshot.timeLeft;
-      } else {
-        currentTarget = null;
-        originalHand = [];
-        score = 0;
-        timeLeft = 60;
-      }
-      
-      isGameActive = false;
-      currentStep = 0;
-      combo = 0;
-      
-      document.getElementById('score').textContent = score;
-      document.getElementById('timeLeft').textContent = timeLeft;
-      document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
-      document.getElementById('message').textContent = '🎯 點擊第一張卡牌！';
-      document.getElementById('message').className = 'message info';
-      
-      const handArea = document.getElementById('handArea');
-      handArea.innerHTML = '';
-      for (let i = 0; i < originalHand.length; i++) {
-        handArea.appendChild(createCard(originalHand[i]));
-      }
-      
-      if (currentTarget !== null) {
-        setTimeout(() => {
-          startTimer();
-        }, 100);
-      } else {
-        const overlay = document.getElementById('startOverlay');
-        overlay.style.display = 'block';
-        overlay.classList.add('blur');
-        overlay.classList.add('active');
-        positionStartButton();
-      }
-    }
-
     // ===== 題目生成 =====
     function isValidPuzzle(puzzle) {
       if (!puzzle.ops.every(x => x >= 1 && x <= 13)) return false;
@@ -1098,7 +971,7 @@
       return { ops: [5,4,3,2,1], target: 10 }; // fallback
     }
 
-    // ===== 新增：解析 URL 參數 =====
+    // ===== 解析 URL 參數 =====
     function parseUrlPuzzle() {
       const urlParams = new URLSearchParams(window.location.search);
       const handParam = urlParams.get('hand');
@@ -1127,25 +1000,37 @@
       }
     }
 
-    // ===== 載入新遊戲（支援 URL 題目）=====
-    function loadNewGame(fromUrl = false) {
+    // ===== 載入新遊戲（支援快照）=====
+    function loadNewGame(fromUrl = false, useSnapshot = false) {
       combo = 0;
       currentStep = 0;
       
       let puzzle;
-      if (fromUrl) {
-        puzzle = parseUrlPuzzle();
-      }
-
-      if (!puzzle) {
-        puzzle = generateUniquePuzzle();
+      
+      if (useSnapshot && currentGameSnapshot) {
+        // 從快照恢復
+        puzzle = {
+          ops: [...currentGameSnapshot.hand],
+          target: currentGameSnapshot.target
+        };
+      } else {
+        // 生成新題目
+        if (fromUrl) {
+          puzzle = parseUrlPuzzle();
+        }
+        if (!puzzle) {
+          puzzle = generateUniquePuzzle();
+        }
       }
 
       const { ops: hand, target } = puzzle;
       currentTarget = target;
       originalHand = [...hand];
+      
+      // === 顯示目標牌 ===
       document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
 
+      // === 顯示卡牌 ===
       const handArea = document.getElementById('handArea');
       handArea.innerHTML = '';
       for (let i = 0; i < hand.length; i++) {
@@ -1166,9 +1051,73 @@
         score: score,
         timeLeft: timeLeft
       };
+
+      isGameActive = true;
     }
 
-    // ===== 新增：分享挑戰（帶參數網址）=====
+    // ===== 播放音效並啟動遊戲（支援快照）=====
+    function speakTextAndStartGame(fromUrl = false, useSnapshot = false) {
+      initAudioContext();
+      
+      if (!volumeEnabled) {
+        setTimeout(() => {
+          loadNewGame(fromUrl, useSnapshot);
+          startTimer();
+        }, 400);
+        return;
+      }
+
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance("Ready? Go!");
+        utterance.lang = 'en-US';
+        utterance.rate = 1.2;
+        speechSynthesis.speak(utterance);
+        
+        setTimeout(() => {
+          loadNewGame(fromUrl, useSnapshot);
+          startTimer();
+        }, 1000);
+      } else {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          
+          const oscillator1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          oscillator1.type = 'sine';
+          oscillator1.frequency.value = 880;
+          gain1.gain.value = 0.3;
+          oscillator1.connect(gain1);
+          gain1.connect(ctx.destination);
+          oscillator1.start();
+          oscillator1.stop(ctx.currentTime + 0.3);
+          
+          setTimeout(() => {
+            const oscillator2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            oscillator2.type = 'square';
+            oscillator2.frequency.value = 440;
+            gain2.gain.value = 0.4;
+            oscillator2.connect(gain2);
+            gain2.connect(ctx.destination);
+            oscillator2.start();
+            oscillator2.stop(ctx.currentTime + 0.4);
+            
+            setTimeout(() => {
+              loadNewGame(fromUrl, useSnapshot);
+              startTimer();
+            }, 400);
+          }, 400);
+        } catch (e) {
+          console.log("Audio not supported");
+          setTimeout(() => {
+            loadNewGame(fromUrl, useSnapshot);
+            startTimer();
+          }, 400);
+        }
+      }
+    }
+
+    // ===== 分享挑戰 =====
     async function shareChallenge() {
       if (!currentPuzzle) {
         alert('無法取得題目資訊');
@@ -1178,7 +1127,7 @@
       const { hand, target } = currentPuzzle;
       const cardsStr = hand.join(',');
       // 🔁 請替換為你的實際遊戲網址！
-      const baseUrl = 'https://lewiskk0793-netizen.github.io/Math-Royale/'; 
+      const baseUrl = 'https://yourgame.com'; 
       const urlWithParams = `${baseUrl}?hand=${cardsStr}&target=${target}`;
       const shareText = `【Math Royale 挑戰】用 ${cardsStr} 算出 ${target}！你能解開嗎？👉 ${urlWithParams}`;
 
@@ -1240,13 +1189,13 @@
 
     // ===== 開始遊戲 =====
     function startGame() {
-      speakText("Ready? Go!");
       const overlay = document.getElementById('startOverlay');
-      overlay.classList.remove('blur');
       overlay.classList.remove('active');
       setTimeout(() => {
         overlay.style.display = 'none';
       }, 500);
+      
+      speakTextAndStartGame();
     }
 
     function newGame() {
@@ -1267,6 +1216,72 @@
       const modal = document.getElementById('instructionsModal');
       if (event.target === modal) closeInstructions();
     };
+
+    // ===== 重新開始（使用快照）=====
+    function restartGame() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      
+      document.getElementById('successModal').style.display = 'none';
+      document.getElementById('failureModal').style.display = 'none';
+      
+      // === 隱藏卡牌和目標牌 ===
+      document.getElementById('handArea').innerHTML = '';
+      document.getElementById('targetCard').textContent = '?';
+      document.getElementById('message').textContent = '🎯 點擊 "Start!" 開始遊戲';
+      document.getElementById('message').className = 'message info';
+      
+      if (currentGameSnapshot) {
+        currentTarget = currentGameSnapshot.target;
+        originalHand = [...currentGameSnapshot.hand];
+        score = currentGameSnapshot.score;
+        timeLeft = currentGameSnapshot.timeLeft;
+        
+        document.getElementById('score').textContent = score;
+        document.getElementById('timeLeft').textContent = timeLeft;
+        
+        // 播放音效並啟動（卡牌將在 loadNewGame 中顯示）
+        speakTextAndStartGame(false, true);
+      } else {
+        startNewGameWithAudio();
+      }
+    }
+
+    // ===== 繼續挑戰（不使用快照）=====
+    function continueChallenge() {
+      startNewGameWithAudio();
+    }
+
+    // ===== 帶音效的遊戲啟動流程 =====
+    function startNewGameWithAudio(fromUrl = false) {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      
+      // === 隱藏卡牌和目標牌 ===
+      currentTarget = null;
+      originalHand = [];
+      score = 0;
+      combo = 0;
+      currentStep = 0;
+      isGameActive = false;
+      timeLeft = 60;
+      
+      document.getElementById('score').textContent = '0';
+      document.getElementById('timeLeft').textContent = '60';
+      document.getElementById('message').textContent = '🎯 點擊 "Start!" 開始遊戲';
+      document.getElementById('message').className = 'message info';
+      document.getElementById('handArea').innerHTML = '';
+      document.getElementById('targetCard').textContent = '?';
+      
+      document.getElementById('successModal').style.display = 'none';
+      document.getElementById('failureModal').style.display = 'none';
+      
+      speakTextAndStartGame(fromUrl, false);
+    }
 
     // ===== 啟動遊戲（檢查 URL 參數）=====
     document.addEventListener('DOMContentLoaded', () => {
@@ -1293,18 +1308,11 @@
       document.getElementById('failureModal').style.display = 'none';
       document.getElementById('instructionsModal').style.display = 'none';
       
-      // 檢查 URL 是否有題目
       const hasUrlPuzzle = parseUrlPuzzle() !== null;
       
       if (hasUrlPuzzle) {
-        // 從 URL 載入題目
-        loadNewGame(true);
-        document.getElementById('startOverlay').style.display = 'none';
-        startTimer();
-        document.getElementById('message').textContent = '🎯 點擊第一張卡牌！';
-        document.getElementById('message').className = 'message info';
+        speakTextAndStartGame(true, false);
       } else {
-        // 正常啟動流程
         const overlay = document.getElementById('startOverlay');
         overlay.classList.add('active');
         positionStartButton();
