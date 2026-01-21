@@ -588,7 +588,7 @@
     function startTimer() {
       if (timer) clearInterval(timer);
       timeLeft = 60;
-      isGameActive = true; // ← 在這裡啟用遊戲
+      isGameActive = true;
       updateTimerUI();
       
       timer = setInterval(() => {
@@ -952,7 +952,7 @@
     // ===== 驗證題目（允許目標值 1-13）=====
     function isValidPuzzle(puzzle) {
       if (!puzzle.ops.every(x => x >= 1 && x <= 13)) return false;
-      if (puzzle.target < 1 || puzzle.target > 13) return false; // ← 允許 1-13
+      if (puzzle.target < 1 || puzzle.target > 13) return false;
       const sum = puzzle.ops.reduce((a, b) => a + b, 0);
       const minPossible = Math.max(1, puzzle.ops.reduce((a, b) => Math.min(a, b), 13));
       if (sum < puzzle.target) return false;
@@ -989,7 +989,7 @@
         return { hand, target };
       } catch (e) {
         console.warn('URL puzzle parsing failed:', e.message);
-        return null; // ← 關鍵：永遠返回 null 而非拋出例外
+        return null;
       }
     }
 
@@ -1037,7 +1037,7 @@
       return sortedOps.join(',') + '|' + puzzle.target;
     }
 
-    // ===== 載入新遊戲（增加防禦性檢查）=====
+    // ===== 載入新遊戲（精確處理 URL 載入）=====
     function loadNewGame(fromUrl = false, useSnapshot = false) {
       combo = 0;
       currentStep = 0;
@@ -1053,10 +1053,18 @@
       } else if (fromUrl) {
         // 嘗試從 URL 載入
         puzzle = parseUrlPuzzle();
+        
+        // 只有在 URL 無效時才生成新題目
+        if (!puzzle) {
+          puzzle = generateUniquePuzzle();
+        }
+      } else {
+        // 正常生成新題目
+        puzzle = generateUniquePuzzle();
       }
-      
-      // 如果沒有有效題目，生成新題目
-      if (!puzzle) {
+
+      // === 確保 puzzle 有效 ===
+      if (!puzzle || !puzzle.ops || !Array.isArray(puzzle.ops) || puzzle.ops.length !== 5) {
         puzzle = generateUniquePuzzle();
       }
 
@@ -1287,7 +1295,7 @@
         timer = null;
       }
       
-      // === 隱藏卡牌和目標牌 ===
+      // === 重置狀態 ===
       currentTarget = null;
       originalHand = [];
       score = 0;
@@ -1306,10 +1314,11 @@
       document.getElementById('successModal').style.display = 'none';
       document.getElementById('failureModal').style.display = 'none';
       
+      // === 播放音效並啟動 ===
       speakTextAndStartGame(fromUrl, false);
     }
 
-    // ===== 啟動遊戲（檢查 URL 參數）=====
+    // ===== 啟動遊戲（最終修正版）=====
     document.addEventListener('DOMContentLoaded', () => {
       currentTarget = null;
       originalHand = [];
@@ -1334,21 +1343,18 @@
       document.getElementById('failureModal').style.display = 'none';
       document.getElementById('instructionsModal').style.display = 'none';
       
-      // 檢查 URL 是否有題目
-      const hasUrlPuzzle = parseUrlPuzzle() !== null;
+      // === 關鍵修正：統一處理 URL 載入 ===
+      const urlPuzzle = parseUrlPuzzle();
       
-      if (hasUrlPuzzle) {
-        // 嘗試從 URL 載入題目
+      if (urlPuzzle) {
+        // 有有效 URL 題目：直接開始遊戲
         speakTextAndStartGame(true, false);
       } else {
-        // 正常啟動：顯示 Start! 按鈕
+        // 無效或無 URL：顯示 Start! 按鈕
         const overlay = document.getElementById('startOverlay');
         overlay.classList.add('active');
-        overlay.style.display = 'block'; // 確保顯示
-        // 延遲定位以確保 DOM 已渲染
-        setTimeout(() => {
-          positionStartButton();
-        }, 100);
+        overlay.style.display = 'block';
+        setTimeout(() => positionStartButton(), 100);
       }
     });
   </script>
