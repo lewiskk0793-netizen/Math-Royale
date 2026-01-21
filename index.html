@@ -1090,7 +1090,7 @@
       };
     }
 
-    // ===== 播放音效並啟動遊戲（修正版）=====
+    // ===== 播放音效並啟動遊戲（移除 SpeechSynthesis）=====
     function speakTextAndStartGame(fromUrl = false, useSnapshot = false) {
       initAudioContext();
       
@@ -1103,54 +1103,42 @@
         return;
       }
 
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance("Ready? Go!");
-        utterance.lang = 'en-US';
-        utterance.rate = 1.2;
+      // === 統一使用 beep 音效替代語音 ===
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // 使用 onend 事件確保順序
-        utterance.onend = () => {
-          startTimer();
-        };
+        // "Ready?" - 高音
+        const oscillator1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        oscillator1.type = 'sine';
+        oscillator1.frequency.value = 880;
+        gain1.gain.value = 0.3;
+        oscillator1.connect(gain1);
+        gain1.connect(ctx.destination);
+        oscillator1.start();
+        oscillator1.stop(ctx.currentTime + 0.3);
         
-        speechSynthesis.speak(utterance);
-      } else {
-        // 使用 beep 音效替代
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // "Go!" - 低音（延遲 0.4 秒）
+        setTimeout(() => {
+          const oscillator2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          oscillator2.type = 'square';
+          oscillator2.frequency.value = 440;
+          gain2.gain.value = 0.4;
+          oscillator2.connect(gain2);
+          gain2.connect(ctx.destination);
+          oscillator2.start();
+          oscillator2.stop(ctx.currentTime + 0.4);
           
-          const oscillator1 = ctx.createOscillator();
-          const gain1 = ctx.createGain();
-          oscillator1.type = 'sine';
-          oscillator1.frequency.value = 880;
-          gain1.gain.value = 0.3;
-          oscillator1.connect(gain1);
-          gain1.connect(ctx.destination);
-          oscillator1.start();
-          oscillator1.stop(ctx.currentTime + 0.3);
-          
-          // "Go!" - 低音（延遲 0.4 秒）
+          // 在 "Go!" 音效結束後才開始遊戲
           setTimeout(() => {
-            const oscillator2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            oscillator2.type = 'square';
-            oscillator2.frequency.value = 440;
-            gain2.gain.value = 0.4;
-            oscillator2.connect(gain2);
-            gain2.connect(ctx.destination);
-            oscillator2.start();
-            oscillator2.stop(ctx.currentTime + 0.4);
-            
-            // 在 "Go!" 音效結束後才開始遊戲
-            setTimeout(() => {
-              startTimer();
-            }, 400);
+            startTimer();
           }, 400);
-        } catch (e) {
-          console.log("Audio not supported");
-          // 如果音效不支援，直接開始遊戲
-          startTimer();
-        }
+        }, 400);
+      } catch (e) {
+        console.log("Audio not supported");
+        // 如果音效不支援，直接開始遊戲
+        startTimer();
       }
     }
 
