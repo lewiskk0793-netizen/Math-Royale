@@ -961,32 +961,35 @@
       return true;
     }
 
-    // ===== 解析 URL 參數 =====
+    // ===== 解析 URL 參數（強化錯誤處理）=====
     function parseUrlPuzzle() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const handParam = urlParams.get('hand');
-      const targetParam = urlParams.get('target');
-
-      if (!handParam || !targetParam) return null;
-
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const handParam = urlParams.get('hand');
+        const targetParam = urlParams.get('target');
+
+        if (!handParam || !targetParam) return null;
+
+        // 解析卡牌
         const hand = handParam.split(',').map(str => {
           const num = parseInt(str.trim(), 10);
-          if (isNaN(num) || num < 1 || num > 13) throw new Error('Invalid card');
+          if (isNaN(num) || num < 1 || num > 13) throw new Error('Invalid card value');
           return num;
         });
 
-        if (hand.length !== 5) throw new Error('Must have 5 cards');
+        if (hand.length !== 5) throw new Error('Must have exactly 5 cards');
 
+        // 解析目標值
         const target = parseInt(targetParam.trim(), 10);
-        if (isNaN(target) || target < 1 || target > 13) throw new Error('Invalid target');
+        if (isNaN(target) || target < 1 || target > 13) throw new Error('Invalid target value');
 
-        if (!isValidPuzzle({ ops: hand, target })) throw new Error('Invalid puzzle');
+        // 驗證題目是否合法
+        if (!isValidPuzzle({ ops: hand, target })) throw new Error('Invalid puzzle combination');
 
         return { hand, target };
       } catch (e) {
-        console.warn('Invalid URL parameters:', e.message);
-        return null;
+        console.warn('URL puzzle parsing failed:', e.message);
+        return null; // ← 關鍵：永遠返回 null 而非拋出例外
       }
     }
 
@@ -1034,12 +1037,12 @@
       return sortedOps.join(',') + '|' + puzzle.target;
     }
 
-    // ===== 載入新遊戲（支援快照）=====
+    // ===== 載入新遊戲（增加防禦性檢查）=====
     function loadNewGame(fromUrl = false, useSnapshot = false) {
       combo = 0;
       currentStep = 0;
       
-      let puzzle;
+      let puzzle = null;
       
       if (useSnapshot && currentGameSnapshot) {
         // 從快照恢復
@@ -1047,14 +1050,14 @@
           ops: [...currentGameSnapshot.hand],
           target: currentGameSnapshot.target
         };
-      } else {
-        // 生成新題目
-        if (fromUrl) {
-          puzzle = parseUrlPuzzle();
-        }
-        if (!puzzle) {
-          puzzle = generateUniquePuzzle();
-        }
+      } else if (fromUrl) {
+        // 嘗試從 URL 載入
+        puzzle = parseUrlPuzzle();
+      }
+      
+      // 如果沒有有效題目，生成新題目
+      if (!puzzle) {
+        puzzle = generateUniquePuzzle();
       }
 
       const { ops: hand, target } = puzzle;
@@ -1085,8 +1088,6 @@
         score: score,
         timeLeft: timeLeft
       };
-
-      // === 移除 isGameActive = true（由 startTimer 設定）===
     }
 
     // ===== 播放音效並啟動遊戲（修正版）=====
