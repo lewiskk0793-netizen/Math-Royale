@@ -1037,8 +1037,50 @@
       return sortedOps.join(',') + '|' + puzzle.target;
     }
 
-    // ===== 載入新遊戲（精確處理 URL 載入）=====
-    function loadNewGame(fromUrl = false, useSnapshot = false) {
+    // ===== 專用：從 URL 載入題目 =====
+    function loadPuzzleFromUrl() {
+      const puzzle = parseUrlPuzzle();
+      
+      if (!puzzle) {
+        // URL 無效時 fallback 到隨機題目
+        return loadNewGame(false);
+      }
+      
+      combo = 0;
+      currentStep = 0;
+      
+      const { hand, target } = puzzle;
+      currentTarget = target;
+      originalHand = [...hand];
+      
+      // === 顯示目標牌 ===
+      document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
+
+      // === 顯示卡牌 ===
+      const handArea = document.getElementById('handArea');
+      handArea.innerHTML = '';
+      for (let i = 0; i < hand.length; i++) {
+        handArea.appendChild(createCard(hand[i]));
+      }
+
+      currentPuzzle = {
+        hand: [...hand],
+        target: target
+      };
+
+      clearSelection();
+      showMessage('🎯 點擊第一張卡牌！', 'info');
+      
+      currentGameSnapshot = {
+        target: currentTarget,
+        hand: [...originalHand],
+        score: score,
+        timeLeft: timeLeft
+      };
+    }
+
+    // ===== 載入新遊戲（僅用於隨機生成）=====
+    function loadNewGame(useSnapshot = false) {
       combo = 0;
       currentStep = 0;
       
@@ -1050,21 +1092,8 @@
           ops: [...currentGameSnapshot.hand],
           target: currentGameSnapshot.target
         };
-      } else if (fromUrl) {
-        // 嘗試從 URL 載入
-        puzzle = parseUrlPuzzle();
-        
-        // 只有在 URL 無效時才生成新題目
-        if (!puzzle) {
-          puzzle = generateUniquePuzzle();
-        }
       } else {
-        // 正常生成新題目
-        puzzle = generateUniquePuzzle();
-      }
-
-      // === 確保 puzzle 有效 ===
-      if (!puzzle || !puzzle.ops || !Array.isArray(puzzle.ops) || puzzle.ops.length !== 5) {
+        // 生成新題目
         puzzle = generateUniquePuzzle();
       }
 
@@ -1098,24 +1127,25 @@
       };
     }
 
-    // ===== 播放音效並啟動遊戲（移除 SpeechSynthesis）=====
+    // ===== 播放音效並啟動遊戲 =====
     function speakTextAndStartGame(fromUrl = false, useSnapshot = false) {
       initAudioContext();
       
       // 先同步載入題目
-      loadNewGame(fromUrl, useSnapshot);
+      if (fromUrl) {
+        loadPuzzleFromUrl(); // ← 使用專用函數
+      } else {
+        loadNewGame(useSnapshot);
+      }
       
       if (!volumeEnabled) {
-        // 靜音模式：直接啟動計時器
         startTimer();
         return;
       }
 
-      // === 統一使用 beep 音效替代語音 ===
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // "Ready?" - 高音
         const oscillator1 = ctx.createOscillator();
         const gain1 = ctx.createGain();
         oscillator1.type = 'sine';
@@ -1126,7 +1156,6 @@
         oscillator1.start();
         oscillator1.stop(ctx.currentTime + 0.3);
         
-        // "Go!" - 低音（延遲 0.4 秒）
         setTimeout(() => {
           const oscillator2 = ctx.createOscillator();
           const gain2 = ctx.createGain();
@@ -1138,14 +1167,12 @@
           oscillator2.start();
           oscillator2.stop(ctx.currentTime + 0.4);
           
-          // 在 "Go!" 音效結束後才開始遊戲
           setTimeout(() => {
             startTimer();
           }, 400);
         }, 400);
       } catch (e) {
         console.log("Audio not supported");
-        // 如果音效不支援，直接開始遊戲
         startTimer();
       }
     }
