@@ -1037,48 +1037,6 @@
       return sortedOps.join(',') + '|' + puzzle.target;
     }
 
-    // ===== 專用：從 URL 載入題目 =====
-    function loadPuzzleFromUrl() {
-      const puzzle = parseUrlPuzzle();
-      
-      if (!puzzle) {
-        // URL 無效時 fallback 到隨機題目
-        return loadNewGame(false);
-      }
-      
-      combo = 0;
-      currentStep = 0;
-      
-      const { hand, target } = puzzle;
-      currentTarget = target;
-      originalHand = [...hand];
-      
-      // === 顯示目標牌 ===
-      document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
-
-      // === 顯示卡牌 ===
-      const handArea = document.getElementById('handArea');
-      handArea.innerHTML = '';
-      for (let i = 0; i < hand.length; i++) {
-        handArea.appendChild(createCard(hand[i]));
-      }
-
-      currentPuzzle = {
-        hand: [...hand],
-        target: target
-      };
-
-      clearSelection();
-      showMessage('🎯 點擊第一張卡牌！', 'info');
-      
-      currentGameSnapshot = {
-        target: currentTarget,
-        hand: [...originalHand],
-        score: score,
-        timeLeft: timeLeft
-      };
-    }
-
     // ===== 載入新遊戲（僅用於隨機生成）=====
     function loadNewGame(useSnapshot = false) {
       combo = 0;
@@ -1125,56 +1083,6 @@
         score: score,
         timeLeft: timeLeft
       };
-    }
-
-    // ===== 播放音效並啟動遊戲 =====
-    function speakTextAndStartGame(fromUrl = false, useSnapshot = false) {
-      initAudioContext();
-      
-      // 先同步載入題目
-      if (fromUrl) {
-        loadPuzzleFromUrl(); // ← 使用專用函數
-      } else {
-        loadNewGame(useSnapshot);
-      }
-      
-      if (!volumeEnabled) {
-        startTimer();
-        return;
-      }
-
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        const oscillator1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        oscillator1.type = 'sine';
-        oscillator1.frequency.value = 880;
-        gain1.gain.value = 0.3;
-        oscillator1.connect(gain1);
-        gain1.connect(ctx.destination);
-        oscillator1.start();
-        oscillator1.stop(ctx.currentTime + 0.3);
-        
-        setTimeout(() => {
-          const oscillator2 = ctx.createOscillator();
-          const gain2 = ctx.createGain();
-          oscillator2.type = 'square';
-          oscillator2.frequency.value = 440;
-          gain2.gain.value = 0.4;
-          oscillator2.connect(gain2);
-          gain2.connect(ctx.destination);
-          oscillator2.start();
-          oscillator2.stop(ctx.currentTime + 0.4);
-          
-          setTimeout(() => {
-            startTimer();
-          }, 400);
-        }, 400);
-      } catch (e) {
-        console.log("Audio not supported");
-        startTimer();
-      }
     }
 
     // ===== 分享挑戰 =====
@@ -1248,7 +1156,7 @@
       }
     });
 
-    // ===== 開始遊戲 =====
+    // ===== 開始遊戲（播放音效並啟動）=====
     function startGame() {
       const overlay = document.getElementById('startOverlay');
       overlay.classList.remove('active');
@@ -1256,6 +1164,7 @@
         overlay.style.display = 'none';
       }, 500);
       
+      // 播放音效並啟動遊戲
       speakTextAndStartGame();
     }
 
@@ -1303,46 +1212,84 @@
         document.getElementById('score').textContent = score;
         document.getElementById('timeLeft').textContent = timeLeft;
         
-        // 播放音效並啟動（卡牌將在 loadNewGame 中顯示）
-        speakTextAndStartGame(false, true);
+        // 顯示 Start! 按鈕
+        const overlay = document.getElementById('startOverlay');
+        overlay.classList.add('active');
+        overlay.style.display = 'block';
+        setTimeout(() => positionStartButton(), 100);
       } else {
-        startNewGameWithAudio();
+        // 顯示 Start! 按鈕
+        const overlay = document.getElementById('startOverlay');
+        overlay.classList.add('active');
+        overlay.style.display = 'block';
+        setTimeout(() => positionStartButton(), 100);
       }
     }
 
     // ===== 繼續挑戰（不使用快照）=====
     function continueChallenge() {
-      startNewGameWithAudio();
+      // 顯示 Start! 按鈕
+      const overlay = document.getElementById('startOverlay');
+      overlay.classList.add('active');
+      overlay.style.display = 'block';
+      setTimeout(() => positionStartButton(), 100);
     }
 
-    // ===== 帶音效的遊戲啟動流程 =====
-    function startNewGameWithAudio(fromUrl = false) {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
+    // ===== 播放音效並啟動遊戲 =====
+    function speakTextAndStartGame() {
+      initAudioContext();
+      
+      // 如果有預載題目，使用它；否則生成新題目
+      if (currentTarget !== null && originalHand.length > 0) {
+        // 顯示預載題目
+        document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
+        const handArea = document.getElementById('handArea');
+        handArea.innerHTML = '';
+        for (let i = 0; i < originalHand.length; i++) {
+          handArea.appendChild(createCard(originalHand[i]));
+        }
+      } else {
+        // 生成新題目
+        loadNewGame();
       }
       
-      // === 重置狀態 ===
-      currentTarget = null;
-      originalHand = [];
-      score = 0;
-      combo = 0;
-      currentStep = 0;
-      isGameActive = false;
-      timeLeft = 60;
-      
-      document.getElementById('score').textContent = '0';
-      document.getElementById('timeLeft').textContent = '60';
-      document.getElementById('message').textContent = '🎯 點擊 "Start!" 開始遊戲';
-      document.getElementById('message').className = 'message info';
-      document.getElementById('handArea').innerHTML = '';
-      document.getElementById('targetCard').textContent = '?';
-      
-      document.getElementById('successModal').style.display = 'none';
-      document.getElementById('failureModal').style.display = 'none';
-      
-      // === 播放音效並啟動 ===
-      speakTextAndStartGame(fromUrl, false);
+      if (!volumeEnabled) {
+        startTimer();
+        return;
+      }
+
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const oscillator1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        oscillator1.type = 'sine';
+        oscillator1.frequency.value = 880;
+        gain1.gain.value = 0.3;
+        oscillator1.connect(gain1);
+        gain1.connect(ctx.destination);
+        oscillator1.start();
+        oscillator1.stop(ctx.currentTime + 0.3);
+        
+        setTimeout(() => {
+          const oscillator2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          oscillator2.type = 'square';
+          oscillator2.frequency.value = 440;
+          gain2.gain.value = 0.4;
+          oscillator2.connect(gain2);
+          gain2.connect(ctx.destination);
+          oscillator2.start();
+          oscillator2.stop(ctx.currentTime + 0.4);
+          
+          setTimeout(() => {
+            startTimer();
+          }, 400);
+        }, 400);
+      } catch (e) {
+        console.log("Audio not supported");
+        startTimer();
+      }
     }
 
     // ===== 啟動遊戲（最終修正版）=====
@@ -1370,19 +1317,27 @@
       document.getElementById('failureModal').style.display = 'none';
       document.getElementById('instructionsModal').style.display = 'none';
       
-      // === 關鍵修正：統一處理 URL 載入 ===
-      const urlPuzzle = parseUrlPuzzle();
+      // === 關鍵修正：無論是否有 URL 參數，都顯示 Start! 按鈕 ===
+      const overlay = document.getElementById('startOverlay');
+      overlay.classList.add('active');
+      overlay.style.display = 'block';
       
+      // 嘗試解析 URL 參數（僅用於預載題目）
+      const urlPuzzle = parseUrlPuzzle();
       if (urlPuzzle) {
-        // 有有效 URL 題目：直接開始遊戲
-        speakTextAndStartGame(true, false);
-      } else {
-        // 無效或無 URL：顯示 Start! 按鈕
-        const overlay = document.getElementById('startOverlay');
-        overlay.classList.add('active');
-        overlay.style.display = 'block';
-        setTimeout(() => positionStartButton(), 100);
+        // 預載題目但不啟動遊戲
+        currentTarget = urlPuzzle.target;
+        originalHand = [...urlPuzzle.hand];
+        currentGameSnapshot = {
+          target: currentTarget,
+          hand: [...originalHand],
+          score: 0,
+          timeLeft: 60
+        };
       }
+      
+      // 立即定位 Start! 按鈕
+      setTimeout(() => positionStartButton(), 100);
     });
   </script>
 </body>
