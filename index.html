@@ -327,7 +327,7 @@
       background: #d63031;
     }
 
-    /* === 新增：分享按鈕樣式 === */
+    /* 分享按鈕樣式 */
     .share-btn {
       background: #e17055;
       color: white;
@@ -480,7 +480,7 @@
     let generatedPuzzles = new Set();
     let volumeEnabled = true;
     let audioContext = null;
-    let currentPuzzle = null; // ← 新增：儲存當前題目
+    let currentPuzzle = null;
 
     // ===== 工具函數 =====
     function getRandomSuit() {
@@ -1098,26 +1098,63 @@
       return { ops: [5,4,3,2,1], target: 10 }; // fallback
     }
 
-    // ===== 載入新遊戲（儲存題目）=====
-    function loadNewGame() {
+    // ===== 新增：解析 URL 參數 =====
+    function parseUrlPuzzle() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const handParam = urlParams.get('hand');
+      const targetParam = urlParams.get('target');
+
+      if (!handParam || !targetParam) return null;
+
+      try {
+        const hand = handParam.split(',').map(str => {
+          const num = parseInt(str.trim(), 10);
+          if (isNaN(num) || num < 1 || num > 13) throw new Error('Invalid card');
+          return num;
+        });
+
+        if (hand.length !== 5) throw new Error('Must have 5 cards');
+
+        const target = parseInt(targetParam.trim(), 10);
+        if (isNaN(target) || target < 3 || target > 13) throw new Error('Invalid target');
+
+        if (!isValidPuzzle({ ops: hand, target })) throw new Error('Invalid puzzle');
+
+        return { hand, target };
+      } catch (e) {
+        console.warn('Invalid URL parameters:', e.message);
+        return null;
+      }
+    }
+
+    // ===== 載入新遊戲（支援 URL 題目）=====
+    function loadNewGame(fromUrl = false) {
       combo = 0;
       currentStep = 0;
       
-      const p = generateUniquePuzzle();
-      currentTarget = p.target;
-      originalHand = [...p.ops];
+      let puzzle;
+      if (fromUrl) {
+        puzzle = parseUrlPuzzle();
+      }
+
+      if (!puzzle) {
+        puzzle = generateUniquePuzzle();
+      }
+
+      const { ops: hand, target } = puzzle;
+      currentTarget = target;
+      originalHand = [...hand];
       document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
 
       const handArea = document.getElementById('handArea');
       handArea.innerHTML = '';
-      for (let i = 0; i < p.ops.length; i++) {
-        handArea.appendChild(createCard(p.ops[i]));
+      for (let i = 0; i < hand.length; i++) {
+        handArea.appendChild(createCard(hand[i]));
       }
 
-      // === 儲存當前題目供分享使用 ===
       currentPuzzle = {
-        hand: [...p.ops],
-        target: p.target
+        hand: [...hand],
+        target: target
       };
 
       clearSelection();
@@ -1131,7 +1168,7 @@
       };
     }
 
-    // ===== 新增：分享挑戰 =====
+    // ===== 新增：分享挑戰（帶參數網址）=====
     async function shareChallenge() {
       if (!currentPuzzle) {
         alert('無法取得題目資訊');
@@ -1141,14 +1178,14 @@
       const { hand, target } = currentPuzzle;
       const cardsStr = hand.join(',');
       // 🔁 請替換為你的實際遊戲網址！
-      const gameUrl = 'https://lewiskk0793-netizen.github.io/Math-Royale/'; 
-      const shareText = `【Math Royale 挑戰】用 ${cardsStr} 算出 ${target}！你能解開嗎？👉 ${gameUrl}`;
+      const baseUrl = 'https://lewiskk0793-netizen.github.io/Math-Royale/'; 
+      const urlWithParams = `${baseUrl}?hand=${cardsStr}&target=${target}`;
+      const shareText = `【Math Royale 挑戰】用 ${cardsStr} 算出 ${target}！你能解開嗎？👉 ${urlWithParams}`;
 
       try {
         await navigator.clipboard.writeText(shareText);
         showMessage('✅ 已複製！貼上即可邀請朋友挑戰', 'success');
       } catch (err) {
-        // 降級方案
         const textArea = document.createElement('textarea');
         textArea.value = shareText;
         textArea.style.position = 'fixed';
@@ -1168,7 +1205,6 @@
         document.body.removeChild(textArea);
       }
 
-      // 3秒後恢復提示
       setTimeout(() => {
         const msg = document.getElementById('message');
         if (msg.textContent.includes('已複製')) {
@@ -1232,7 +1268,7 @@
       if (event.target === modal) closeInstructions();
     };
 
-    // ===== 啟動遊戲 =====
+    // ===== 啟動遊戲（檢查 URL 參數）=====
     document.addEventListener('DOMContentLoaded', () => {
       currentTarget = null;
       originalHand = [];
@@ -1257,9 +1293,22 @@
       document.getElementById('failureModal').style.display = 'none';
       document.getElementById('instructionsModal').style.display = 'none';
       
-      const overlay = document.getElementById('startOverlay');
-      overlay.classList.add('active');
-      positionStartButton();
+      // 檢查 URL 是否有題目
+      const hasUrlPuzzle = parseUrlPuzzle() !== null;
+      
+      if (hasUrlPuzzle) {
+        // 從 URL 載入題目
+        loadNewGame(true);
+        document.getElementById('startOverlay').style.display = 'none';
+        startTimer();
+        document.getElementById('message').textContent = '🎯 點擊第一張卡牌！';
+        document.getElementById('message').className = 'message info';
+      } else {
+        // 正常啟動流程
+        const overlay = document.getElementById('startOverlay');
+        overlay.classList.add('active');
+        positionStartButton();
+      }
     });
   </script>
 </body>
