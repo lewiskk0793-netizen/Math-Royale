@@ -543,48 +543,59 @@ playTone(440, 0.2, 0.2);
 playTone(392, 0.25, 0.4);
 }
 
-// ===== Ready? Go! 音效（關鍵修正：確保在使用者互動中初始化）=====
+// ===== ✅ Ready? Go! 音效（關鍵修正：同步建立 oscillator）=====
 function playReadyGoSound(callback) {
-if (!volumeEnabled) {
-callback?.();
-return;
-}
-// 在使用者互動中安全地初始化或恢復 AudioContext
-if (!audioContext && window.AudioContext) {
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-if (!audioContext) {
-callback?.();
-return;
-}
-// 必須在使用者事件處理函數中呼叫 resume()
-if (audioContext.state === 'suspended') {
-audioContext.resume().catch(e => console.warn('Resume failed:', e));
-}
-// "Ready?" – 高音
-const osc1 = audioContext.createOscillator();
-const gain1 = audioContext.createGain();
-osc1.type = 'sine';
-osc1.frequency.value = 880; // A5
-gain1.gain.value = 0.3;
-osc1.connect(gain1);
-gain1.connect(audioContext.destination);
-osc1.start();
-osc1.stop(audioContext.currentTime + 0.3);
-// "Go!" – 低音，延遲 0.4 秒
-setTimeout(() => {
-if (audioContext.state !== 'running') return;
-const osc2 = audioContext.createOscillator();
-const gain2 = audioContext.createGain();
-osc2.type = 'square';
-osc2.frequency.value = 440; // A4
-gain2.gain.value = 0.4;
-osc2.connect(gain2);
-gain2.connect(audioContext.destination);
-osc2.start();
-osc2.stop(audioContext.currentTime + 0.4);
-setTimeout(() => callback?.(), 450);
-}, 400);
+  if (!volumeEnabled) {
+    if (callback) callback();
+    return;
+  }
+
+  // 在使用者互動中安全初始化 AudioContext
+  if (!audioContext && window.AudioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  const ctx = audioContext;
+  if (!ctx) {
+    if (callback) callback();
+    return;
+  }
+
+  // 恢復 suspended 狀態（必須在互動事件中）
+  if (ctx.state === 'suspended') {
+    ctx.resume().catch(e => console.warn('Resume failed:', e));
+  }
+
+  try {
+    // "Ready?" – A5 (880Hz), 持續 0.3 秒
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.value = 880;
+    gain1.gain.value = 0.3;
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);           // 立即開始
+    osc1.stop(ctx.currentTime + 0.3);      // 0.3 秒後停止
+
+    // "Go!" – A4 (440Hz), 從 0.4 秒開始，持續 0.4 秒
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'square';
+    osc2.frequency.value = 440;
+    gain2.gain.value = 0.4;
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.4);    // 0.4 秒後開始
+    osc2.stop(ctx.currentTime + 0.8);     // 0.8 秒後停止
+
+    // 音效結束後執行回調
+    if (callback) {
+      setTimeout(() => callback(), 850);
+    }
+  } catch (e) {
+    console.warn('Failed to play Ready? Go! sound:', e);
+    if (callback) callback();
+  }
 }
 
 // ===== 每10秒提示音 =====
@@ -608,37 +619,44 @@ osc.start();
 osc.stop(audioContext.currentTime + 0.15);
 }
 
-// ===== 最後5秒倒數語音/音效 =====
+// ===== ✅ 倒數5秒音效（關鍵修正：移除 volumeEnabled 限制）=====
 function playCountdownVoice(num) {
-const words = {5: 'Five', 4: 'Four', 3: 'Three', 2: 'Two', 1: 'One'};
-const word = words[num];
-if (!volumeEnabled) return;
-if ('speechSynthesis' in window) {
-const utterance = new SpeechSynthesisUtterance(word);
-utterance.lang = 'en-US';
-utterance.rate = 1.0;
-utterance.volume = 0.8;
-speechSynthesis.speak(utterance);
-return;
-}
-if (!audioContext && window.AudioContext) {
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-if (!audioContext) return;
-if (audioContext.state === 'suspended') {
-audioContext.resume().catch(e => console.warn('Resume failed:', e));
-}
-const frequencies = {5: 440, 4: 523, 3: 587, 2: 659, 1: 784};
-const freq = frequencies[num] || 440;
-const osc = audioContext.createOscillator();
-const gain = audioContext.createGain();
-osc.type = 'sine';
-osc.frequency.value = freq;
-gain.gain.value = 0.3;
-osc.connect(gain);
-gain.connect(audioContext.destination);
-osc.start();
-osc.stop(audioContext.currentTime + 0.3);
+  const words = {5: 'Five', 4: 'Four', 3: 'Three', 2: 'Two', 1: 'One'};
+  const word = words[num];
+
+  // 優先使用語音合成（不受 volumeEnabled 影響）
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'en-US';
+    utterance.rate = 1.0;
+    utterance.volume = 0.8;
+    speechSynthesis.speak(utterance);
+    return;
+  }
+
+  // Fallback to beep (ensure audio context is ready)
+  if (!audioContext && window.AudioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (!audioContext) return;
+
+  // Resume if suspended
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().catch(e => console.warn('Resume failed:', e));
+  }
+
+  // Play beep with frequency mapping
+  const frequencies = {5: 440, 4: 523, 3: 587, 2: 659, 1: 784};
+  const freq = frequencies[num] || 440;
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.value = 0.3;
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
+  osc.start();
+  osc.stop(audioContext.currentTime + 0.3);
 }
 
 // ===== 鼓勵語音（計算成功後）=====
