@@ -543,7 +543,7 @@ playTone(440, 0.2, 0.2);
 playTone(392, 0.25, 0.4);
 }
 
-// ===== ✅ Ready? Go! 音效（關鍵修正：同步安排，避免 setTimeout 建立 oscillator）=====
+// ===== Ready? Go! 音效（關鍵修正：同步安排，避免 setTimeout 建立 oscillator）=====
 function playReadyGoSound(callback) {
 if (!volumeEnabled) {
 callback?.();
@@ -1170,11 +1170,21 @@ msg.className = 'message info';
 }, 3000);
 }
 
-// ===== 從玩法說明開始遊戲 =====
+// ===== 從玩法說明開始遊戲（優先使用快照題目）=====
 function startGameFromInstructions() {
 document.getElementById('instructionsModal').style.display = 'none';
-playReadyGoSound(() => {
+  
+// 優先使用快照中的題目（例如從分享連結載入）
+if (currentGameSnapshot && currentGameSnapshot.hand && currentGameSnapshot.target) {
+currentTarget = currentGameSnapshot.target;
+originalHand = [...currentGameSnapshot.hand];
+currentPuzzle = { hand: [...originalHand], target: currentTarget };
+} else {
+// 否則生成新題目
 loadNewGame();
+}
+
+playReadyGoSound(() => {
 document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
 const handArea = document.getElementById('handArea');
 handArea.innerHTML = '';
@@ -1288,20 +1298,33 @@ document.getElementById('message').textContent = '🎯 點擊第一張卡牌！'
 document.getElementById('successModal').style.display = 'none';
 document.getElementById('failureModal').style.display = 'none';
 
-// 自動開啟玩法說明
-document.getElementById('instructionsModal').style.display = 'flex';
-
-// 若有分享參數，預載題目（但不自動開始）
+// 檢查 URL 是否有題目
 const urlPuzzle = parseUrlPuzzle();
 if (urlPuzzle) {
+// 從分享連結載入 → 預載題目並顯示 UI
 currentTarget = urlPuzzle.target;
 originalHand = [...urlPuzzle.hand];
+currentPuzzle = { hand: [...originalHand], target: currentTarget };
 currentGameSnapshot = {
 target: currentTarget,
 hand: [...originalHand],
 score: 0,
 timeLeft: 60
 };
+
+// 立即更新 UI（但不開始計時）
+document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
+const handArea = document.getElementById('handArea');
+handArea.innerHTML = '';
+for (let i = 0; i < originalHand.length; i++) {
+handArea.appendChild(createCard(originalHand[i]));
+}
+
+// 隱藏玩法說明，直接顯示遊戲界面
+document.getElementById('instructionsModal').style.display = 'none';
+} else {
+// 無分享參數 → 顯示玩法說明
+document.getElementById('instructionsModal').style.display = 'flex';
 }
 });
 </script>
