@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
 <title>Math Royale</title>
 <style>
 * {
@@ -16,6 +17,7 @@ padding: 16px 0;
 color: #333;
 min-height: 100vh;
 display: block;
+touch-action: manipulation;
 }
 .container {
 width: 95%;
@@ -413,7 +415,7 @@ background: #d63031;
 </div>
 
 <script>
-// ===== 全域狀態 =====
+// ===== 全域狀態（注意：已移除 audioContext）=====
 const VALUE_TO_RANK = {1:'A',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K'};
 const SUITS = ['♠','♥','♦','♣'];
 let currentTarget = null;
@@ -430,7 +432,6 @@ let currentGameSnapshot = null;
 let lastUsedPattern = -1;
 let generatedPuzzles = new Set();
 let volumeEnabled = true;
-let audioContext = null;
 let currentPuzzle = null;
 
 // ===== 工具函數 =====
@@ -468,195 +469,218 @@ volumeBtn.classList.add('muted');
 }
 }
 
-// ===== 播放單音 =====
-function playTone(frequency, duration = 0.2, startTime = 0) {
-if (!volumeEnabled || !audioContext) return;
-const oscillator = audioContext.createOscillator();
-const gainNode = audioContext.createGain();
-oscillator.type = 'sine';
-oscillator.frequency.value = frequency;
-gainNode.gain.value = 0.3;
-oscillator.connect(gainNode);
-gainNode.connect(audioContext.destination);
-const actualStartTime = audioContext.currentTime + startTime;
-oscillator.start(actualStartTime);
-oscillator.stop(actualStartTime + duration);
-}
-
 // ===== 計算音效（點擊運算符時）=====
 function playCalculationSound(operation) {
 if (!volumeEnabled) return;
-if (!audioContext && window.AudioContext) {
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-if (!audioContext) return;
-if (audioContext.state === 'suspended') {
-audioContext.resume().catch(e => console.warn('Resume failed:', e));
-}
+if (!window.AudioContext && !window.webkitAudioContext) return;
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContext();
+let time = 0;
 switch(operation) {
 case '+':
-playTone(523, 0.2, 0);
-playTone(587, 0.2, 0.2);
+{
+const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+o1.frequency.value = 523; g1.gain.value = 0.3;
+o1.connect(g1); g1.connect(ctx.destination);
+o1.start(time); o1.stop(time + 0.2);
+const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+o2.frequency.value = 587; g2.gain.value = 0.3;
+o2.connect(g2); g2.connect(ctx.destination);
+o2.start(time + 0.2); o2.stop(time + 0.4);
+setTimeout(() => ctx.close(), 450);
 break;
+}
 case '−':
-playTone(587, 0.2, 0);
-playTone(523, 0.2, 0.2);
+{
+const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+o1.frequency.value = 587; g1.gain.value = 0.3;
+o1.connect(g1); g1.connect(ctx.destination);
+o1.start(time); o1.stop(time + 0.2);
+const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+o2.frequency.value = 523; g2.gain.value = 0.3;
+o2.connect(g2); g2.connect(ctx.destination);
+o2.start(time + 0.2); o2.stop(time + 0.4);
+setTimeout(() => ctx.close(), 450);
 break;
+}
 case '×':
-playTone(523, 0.2, 0);
-playTone(659, 0.2, 0);
-playTone(784, 0.2, 0.1);
+{
+const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+o1.frequency.value = 523; g1.gain.value = 0.3;
+o1.connect(g1); g1.connect(ctx.destination);
+o1.start(time); o1.stop(time + 0.2);
+const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+o2.frequency.value = 659; g2.gain.value = 0.3;
+o2.connect(g2); g2.connect(ctx.destination);
+o2.start(time); o2.stop(time + 0.2);
+const o3 = ctx.createOscillator(); const g3 = ctx.createGain();
+o3.frequency.value = 784; g3.gain.value = 0.3;
+o3.connect(g3); g3.connect(ctx.destination);
+o3.start(time + 0.1); o3.stop(time + 0.3);
+setTimeout(() => ctx.close(), 350);
 break;
+}
 case '÷':
-playTone(784, 0.15, 0);
-playTone(1046, 0.15, 0.15);
+{
+const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+o1.frequency.value = 784; g1.gain.value = 0.3;
+o1.connect(g1); g1.connect(ctx.destination);
+o1.start(time); o1.stop(time + 0.15);
+const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+o2.frequency.value = 1046; g2.gain.value = 0.3;
+o2.connect(g2); g2.connect(ctx.destination);
+o2.start(time + 0.15); o2.stop(time + 0.3);
+setTimeout(() => ctx.close(), 350);
 break;
+}
 }
 }
 
 // ===== 成功/失敗音效 =====
 function playSuccessSound() {
 if (!volumeEnabled) return;
-if (!audioContext && window.AudioContext) {
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-if (!audioContext) return;
-if (audioContext.state === 'suspended') {
-audioContext.resume().catch(e => console.warn('Resume failed:', e));
-}
-playTone(523, 0.15, 0);
-playTone(659, 0.15, 0.15);
-playTone(784, 0.15, 0.3);
-playTone(1046, 0.2, 0.45);
+if (!window.AudioContext && !window.webkitAudioContext) return;
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContext();
+const notes = [523, 659, 784, 1046];
+const durations = [0.15, 0.15, 0.15, 0.2];
+let time = 0;
+notes.forEach((freq, i) => {
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+osc.frequency.value = freq;
+gain.gain.value = 0.3;
+osc.connect(gain);
+gain.connect(ctx.destination);
+osc.start(time);
+osc.stop(time + durations[i]);
+time += durations[i] + (i === 2 ? 0.15 : 0);
+});
+setTimeout(() => ctx.close(), 650);
 }
 function playFailureSound() {
 if (!volumeEnabled) return;
-if (!audioContext && window.AudioContext) {
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-if (!audioContext) return;
-if (audioContext.state === 'suspended') {
-audioContext.resume().catch(e => console.warn('Resume failed:', e));
-}
-playTone(523, 0.2, 0);
-playTone(440, 0.2, 0.2);
-playTone(392, 0.25, 0.4);
+if (!window.AudioContext && !window.webkitAudioContext) return;
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContext();
+const notes = [523, 440, 392];
+const times = [0, 0.2, 0.4];
+const durations = [0.2, 0.2, 0.25];
+notes.forEach((freq, i) => {
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+osc.frequency.value = freq;
+gain.gain.value = 0.3;
+osc.connect(gain);
+gain.connect(ctx.destination);
+osc.start(times[i]);
+osc.stop(times[i] + durations[i]);
+});
+setTimeout(() => ctx.close(), 700);
 }
 
-// ===== ✅ Ready? Go! 音效（關鍵修正：同步建立 oscillator）=====
+// ===== ✅ Ready? Go! 音效（終極修正：每次新建 AudioContext）=====
 function playReadyGoSound(callback) {
   if (!volumeEnabled) {
-    if (callback) callback();
+    if (callback) setTimeout(callback, 850);
     return;
   }
 
-  // 在使用者互動中安全初始化 AudioContext
-  if (!audioContext && window.AudioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  const ctx = audioContext;
-  if (!ctx) {
-    if (callback) callback();
+  if (!window.AudioContext && !window.webkitAudioContext) {
+    if (callback) setTimeout(callback, 850);
     return;
   }
 
-  // 恢復 suspended 狀態（必須在互動事件中）
-  if (ctx.state === 'suspended') {
-    ctx.resume().catch(e => console.warn('Resume failed:', e));
-  }
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioContext();
 
-  try {
-    // "Ready?" – A5 (880Hz), 持續 0.3 秒
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.value = 880;
-    gain1.gain.value = 0.3;
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.start(ctx.currentTime);           // 立即開始
-    osc1.stop(ctx.currentTime + 0.3);      // 0.3 秒後停止
+  // "Ready?" – A5 (880Hz), 0.3s
+  const osc1 = ctx.createOscillator();
+  const gain1 = ctx.createGain();
+  osc1.type = 'sine';
+  osc1.frequency.value = 880;
+  gain1.gain.value = 0.3;
+  osc1.connect(gain1);
+  gain1.connect(ctx.destination);
+  osc1.start(0);
+  osc1.stop(0.3);
 
-    // "Go!" – A4 (440Hz), 從 0.4 秒開始，持續 0.4 秒
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'square';
-    osc2.frequency.value = 440;
-    gain2.gain.value = 0.4;
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(ctx.currentTime + 0.4);    // 0.4 秒後開始
-    osc2.stop(ctx.currentTime + 0.8);     // 0.8 秒後停止
+  // "Go!" – A4 (440Hz), start at 0.4s, duration 0.4s
+  const osc2 = ctx.createOscillator();
+  const gain2 = ctx.createGain();
+  osc2.type = 'square';
+  osc2.frequency.value = 440;
+  gain2.gain.value = 0.4;
+  osc2.connect(gain2);
+  gain2.connect(ctx.destination);
+  osc2.start(0.4);
+  osc2.stop(0.8);
 
-    // 音效結束後執行回調
-    if (callback) {
-      setTimeout(() => callback(), 850);
-    }
-  } catch (e) {
-    console.warn('Failed to play Ready? Go! sound:', e);
+  // Close context and callback after delay
+  setTimeout(() => {
+    ctx.close().catch(() => {});
     if (callback) callback();
-  }
+  }, 850);
 }
 
 // ===== 每10秒提示音 =====
 function playTenSecondBeep() {
 if (!volumeEnabled) return;
-if (!audioContext && window.AudioContext) {
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-if (!audioContext) return;
-if (audioContext.state === 'suspended') {
-audioContext.resume().catch(e => console.warn('Resume failed:', e));
-}
-const osc = audioContext.createOscillator();
-const gain = audioContext.createGain();
+if (!window.AudioContext && !window.webkitAudioContext) return;
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContext();
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
 osc.type = 'sine';
 osc.frequency.value = 660;
 gain.gain.value = 0.2;
 osc.connect(gain);
-gain.connect(audioContext.destination);
-osc.start();
-osc.stop(audioContext.currentTime + 0.15);
+gain.connect(ctx.destination);
+osc.start(0);
+osc.stop(0.15);
+setTimeout(() => ctx.close(), 200);
 }
 
-// ===== ✅ 倒數5秒音效（關鍵修正：移除 volumeEnabled 限制）=====
+// ===== ✅ 倒數5秒音效（終極修正：每次新建 AudioContext）=====
 function playCountdownVoice(num) {
-  const words = {5: 'Five', 4: 'Four', 3: 'Three', 2: 'Two', 1: 'One'};
-  const word = words[num];
-
-  // 優先使用語音合成（不受 volumeEnabled 影響）
+  // 優先使用語音合成
   if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
-    utterance.rate = 1.0;
-    utterance.volume = 0.8;
-    speechSynthesis.speak(utterance);
-    return;
+    const words = {5: 'Five', 4: 'Four', 3: 'Three', 2: 'Two', 1: 'One'};
+    const word = words[num];
+    if (word) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'en-US';
+      utterance.rate = 1.0;
+      utterance.volume = 0.8;
+      speechSynthesis.speak(utterance);
+      return;
+    }
   }
 
-  // Fallback to beep (ensure audio context is ready)
-  if (!audioContext && window.AudioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (!audioContext) return;
+  // Fallback to beep (only if volume is enabled)
+  if (!volumeEnabled) return;
+  if (!window.AudioContext && !window.webkitAudioContext) return;
 
-  // Resume if suspended
-  if (audioContext.state === 'suspended') {
-    audioContext.resume().catch(e => console.warn('Resume failed:', e));
-  }
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioContext();
 
-  // Play beep with frequency mapping
   const frequencies = {5: 440, 4: 523, 3: 587, 2: 659, 1: 784};
   const freq = frequencies[num] || 440;
-  const osc = audioContext.createOscillator();
-  const gain = audioContext.createGain();
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
   osc.type = 'sine';
   osc.frequency.value = freq;
   gain.gain.value = 0.3;
   osc.connect(gain);
-  gain.connect(audioContext.destination);
-  osc.start();
-  osc.stop(audioContext.currentTime + 0.3);
+  gain.connect(ctx.destination);
+  osc.start(0);
+  osc.stop(0.3);
+
+  // Auto-close after delay
+  setTimeout(() => {
+    ctx.close().catch(() => {});
+  }, 350);
 }
 
 // ===== 鼓勵語音（計算成功後）=====
@@ -673,26 +697,23 @@ utterance.volume = 0.9;
 speechSynthesis.speak(utterance);
 return;
 }
-if (!audioContext && window.AudioContext) {
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-if (!audioContext) return;
-if (audioContext.state === 'suspended') {
-audioContext.resume().catch(e => console.warn('Resume failed:', e));
-}
-const notes = [523, 659, 784]; // C5, E5, G5
-let time = audioContext.currentTime;
+// Fallback to tone sequence
+if (!window.AudioContext && !window.webkitAudioContext) return;
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContext();
+const notes = [523, 659, 784];
+let time = 0;
 for (let i = 0; i < notes.length; i++) {
-const osc = audioContext.createOscillator();
-const gain = audioContext.createGain();
-osc.type = 'sine';
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
 osc.frequency.value = notes[i];
 gain.gain.value = 0.25;
 osc.connect(gain);
-gain.connect(audioContext.destination);
+gain.connect(ctx.destination);
 osc.start(time + i * 0.1);
 osc.stop(time + i * 0.1 + 0.12);
 }
+setTimeout(() => ctx.close(), 350);
 }
 
 // ===== 計時系統 =====
@@ -1304,7 +1325,6 @@ timeLeft = 60;
 timer = null;
 currentGameSnapshot = null;
 volumeEnabled = true;
-audioContext = null;
 currentPuzzle = null;
 document.getElementById('score').textContent = '0';
 document.getElementById('timeLeft').textContent = '60';
@@ -1332,3 +1352,4 @@ document.getElementById('instructionsModal').style.display = 'flex';
 </script>
 </body>
 </html>
+
