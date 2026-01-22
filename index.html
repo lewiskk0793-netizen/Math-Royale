@@ -483,7 +483,7 @@ oscillator.start(actualStartTime);
 oscillator.stop(actualStartTime + duration);
 }
 
-// ===== 計算音效 =====
+// ===== 計算音效（點擊運算符時）=====
 function playCalculationSound(operation) {
 if (!volumeEnabled) return;
 if (!audioContext && window.AudioContext) {
@@ -583,7 +583,7 @@ setTimeout(() => callback?.(), 450);
 }, 400);
 }
 
-// ===== 每10秒提示音 =====
+// ===== 每10秒提示音 =====（保持不變）
 function playTenSecondBeep() {
 if (!volumeEnabled) return;
 if (!audioContext && window.AudioContext) {
@@ -604,7 +604,7 @@ osc.start();
 osc.stop(audioContext.currentTime + 0.15);
 }
 
-// ===== 最後5秒倒數語音/音效 =====
+// ===== 最後5秒倒數語音/音效 =====（保持不變）
 function playCountdownVoice(num) {
 const words = {5: 'Five', 4: 'Four', 3: 'Three', 2: 'Two', 1: 'One'};
 const word = words[num];
@@ -1111,6 +1111,7 @@ clearInterval(timer);
 timer = null;
 }
 loadNewGame();
+playReadyGoSound(() => {
 document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
 const handArea = document.getElementById('handArea');
 handArea.innerHTML = '';
@@ -1118,7 +1119,7 @@ for (let i = 0; i < originalHand.length; i++) {
 handArea.appendChild(createCard(originalHand[i]));
 }
 startTimer();
-showMessage('🎯 點擊第一張卡牌！', 'info');
+});
 }
 
 // ===== 分享挑戰 =====
@@ -1284,7 +1285,7 @@ document.getElementById('failureModal').style.display = 'none';
 // 檢查 URL 是否有題目
 const urlPuzzle = parseUrlPuzzle();
 if (urlPuzzle) {
-  // 有題目 → 直接開始遊戲
+  // 從分享連結進入 → 直接開始遊戲，播放 Ready? Go!
   currentTarget = urlPuzzle.target;
   originalHand = [...urlPuzzle.hand];
   currentPuzzle = { hand: [...originalHand], target: currentTarget };
@@ -1294,6 +1295,7 @@ if (urlPuzzle) {
     score: 0,
     timeLeft: 60
   };
+
   document.getElementById('instructionsModal').style.display = 'none';
   playReadyGoSound(() => {
     document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
@@ -1305,7 +1307,7 @@ if (urlPuzzle) {
     startTimer();
   });
 } else {
-  // 無題目 → 顯示玩法說明
+  // 無分享參數 → 顯示玩法說明
   document.getElementById('instructionsModal').style.display = 'flex';
 }
 });
