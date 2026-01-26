@@ -1,1602 +1,1512 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<title>Math Royale</title>
-<style>
-* {
-box-sizing: border-box;
-}
-body {
-font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-background: #f0f5ff;
-margin: 0;
-padding: 16px 0;
-color: #333;
-min-height: 100vh;
-display: block;
-touch-action: manipulation;
-}
-.container {
-width: 95%;
-max-width: 800px;
-background: white;
-padding: 16px;
-border-radius: 16px;
-box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-margin: 0 auto;
-}
-h1 {
-text-align: center;
-color: #2c3e50;
-margin-top: 0;
-font-size: 24px;
-}
-.score-time {
-display: flex;
-justify-content: space-between;
-margin-bottom: 16px;
-font-weight: bold;
-align-items: center;
-font-size: 16px;
-}
-.timer-bar {
-height: 8px;
-background: #e0e0e0;
-border-radius: 4px;
-overflow: hidden;
-margin-top: 6px;
-}
-.timer-fill {
-height: 100%;
-background: #0984e3;
-width: 100%;
-transition: width 0.1s linear;
-}
-.target-row {
-display: flex;
-justify-content: center;
-margin: 16px 0;
-}
-.target-card {
-width: 60px;
-height: 80px;
-border: 3px solid #d63031;
-border-radius: 10px;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 18px;
-font-weight: bold;
-background: #ffeaa7;
-}
-.hand-area {
-min-height: 110px;
-height: 110px;
-max-height: 110px;
-margin: 16px 0;
-padding: 0 8px;
-background: #fafafa;
-border-radius: 12px;
-display: flex;
-flex-wrap: nowrap;
-gap: 10px;
-justify-content: center;
-align-items: center;
-overflow-x: hidden;
-overflow-y: hidden;
-}
-.card {
-width: calc(16vw - 12px);
-min-width: 50px;
-max-width: 60px;
-flex-shrink: 0;
-height: 80px;
-border: 3px solid #333;
-border-radius: 10px;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 16px;
-font-weight: bold;
-background: white;
-cursor: pointer;
--webkit-tap-highlight-color: transparent;
-transition: all 0.2s;
-}
-.card.selected-first {
-border-color: #0984e3;
-transform: scale(1.08);
-box-shadow: 0 0 16px rgba(9, 132, 227, 0.6);
-}
-.operator-menu {
-display: none;
-justify-content: center;
-gap: 14px;
-margin: 16px 0;
-flex-wrap: wrap;
-height: 60px;
-}
-.op-btn {
-width: 50px;
-height: 50px;
-font-size: 22px;
-font-weight: bold;
-border: none;
-border-radius: 50%;
-background: #0984e3;
-color: white;
-cursor: pointer;
-}
-.cancel-btn {
-padding: 8px 16px;
-background: #ff7675;
-color: white;
-border: none;
-border-radius: 8px;
-cursor: pointer;
-font-weight: bold;
-font-size: 14px;
-}
-.buttons {
-display: flex;
-gap: 12px;
-flex-wrap: wrap;
-justify-content: center;
-margin: 20px 0;
-}
-button {
-padding: 10px 16px;
-font-size: 16px;
-border: none;
-border-radius: 10px;
-cursor: pointer;
-background: #0984e3;
-color: white;
-font-weight: bold;
-}
-#hintBtn { background: #00b894; }
-#nextBtn { background: #fdcb6e; color: #2d3436; }
-#resetBtn { background: #a29bfe; }
-#volumeBtn { background: #6c5ce7; color: white; }
-#volumeBtn.muted { background: #636e72; color: #dfe6e9; }
-.message {
-margin-top: 16px;
-padding: 12px;
-border-radius: 10px;
-font-weight: bold;
-text-align: center;
-font-size: 14px;
-}
-.success { background: #d5f4e6; color: #00a86b; }
-.error { background: #ffdddd; color: #d63031; }
-.info { background: #e3f2fd; color: #0984e3; }
-/* Modal 通用 */
-.modal,
-#successModal,
-#failureModal,
-#instructionsModal {
-display: none;
-position: fixed;
-z-index: 1000;
-left: 0;
-top: 0;
-width: 100%;
-height: 100%;
-background-color: rgba(0,0,0,0.6);
-overflow: auto;
-justify-content: center;
-align-items: center;
-}
-/* 成功/失敗彈窗 */
-#successModal .modal-content,
-#failureModal .modal-content {
-display: inline-block;
-background: white;
-padding: 16px;
-border-radius: 12px;
-text-align: center;
-box-shadow: 0 6px 24px rgba(0,0,0,0.3);
-min-width: 280px;
-max-width: 90vw;
-font-size: 15px;
-}
-#successModal .modal-content {
-background: #d5f4e6;
-border: 2px solid #00a86b;
-}
-#successTimeMessage {
-color: #00a86b;
-margin-top: 0;
-margin-bottom: 8px;
-font-size: 18px;
-}
-#successMessage {
-font-size: 14px;
-margin: 10px 0;
-color: #006400;
-}
-#failureModal .modal-content {
-background: #ffebee;
-border: 2px solid #d63031;
-}
-#failureModal h2 {
-color: #d63031;
-margin-top: 0;
-margin-bottom: 16px;
-font-size: 20px;
-}
-#failureMessage {
-font-size: 16px;
-margin: 16px 0;
-color: #8B0000;
-}
-/* ===== 玩法說明彈窗樣式（白色背景）===== */
-#instructionsModal .modal-content {
-background: white;
-padding: 20px;
-border-radius: 12px;
-text-align: left;
-max-width: 90vw;
-max-height: 80vh;
-overflow-y: auto;
-box-shadow: 0 6px 24px rgba(0,0,0,0.3);
-position: relative;
-}
-#instructionsModal .close {
-float: right;
-font-size: 24px;
-font-weight: bold;
-cursor: pointer;
-color: #aaa;
-}
-#instructionsModal .close:hover {
-color: #000;
-}
-#langToggleInModal {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: #6c5ce7;
-  color: white;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-.action-buttons {
-display: flex;
-gap: 10px;
-margin-top: 20px;
-width: 100%;
-}
-.action-btn {
-flex: 1;
-padding: 10px 6px;
-border: none;
-border-radius: 8px;
-font-size: 14px;
-font-weight: bold;
-cursor: pointer;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-min-height: 60px;
-}
-.btn-icon {
-font-size: 20px;
-margin-bottom: 4px;
-display: block;
-}
-.restart-btn {
-background: #6c5ce7;
-color: white;
-}
-.continue-btn {
-background: #00a86b;
-color: white;
-}
-#failureModal .continue-btn {
-background: #d63031;
-}
-/* 分享按鈕樣式 */
-.share-btn {
-background: #e17055;
-color: white;
-border: none;
-border-radius: 8px;
-padding: 10px;
-font-size: 14px;
-font-weight: bold;
-cursor: pointer;
-margin-top: 12px;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 6px;
-width: 100%;
-}
-.share-btn:hover {
-background: #d63031;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Math Royale</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      position: relative;
+      touch-action: manipulation;
+    }
+
+    /* ===== 頂部操作欄（固定）===== */
+    .top-bar {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 12px 0;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 100;
+    }
+    .top-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background: #6c5ce7;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-btn.muted { background: #95a5a6; }
+
+    /* ===== 主遊戲容器 ===== */
+    .game-container {
+      width: 100%;
+      max-width: 600px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin: 16px 0;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 16px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .score-time {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .timer-bar {
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .timer-fill {
+      height: 100%;
+      background: #0984e3;
+      width: 100%;
+      transition: width 0.1s linear;
+    }
+
+    .target-row {
+      display: flex;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    .target-card {
+      width: 60px;
+      height: 76px;
+      border: 2px solid #d63031;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      background: #ffeaa7;
+    }
+
+    .hand-area {
+      min-height: 100px;
+      height: 100px;
+      margin: 16px 0;
+      padding: 0 8px;
+      background: #fafafa;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .card {
+      width: calc(16vw - 12px);
+      min-width: 50px;
+      max-width: 60px;
+      flex-shrink: 0;
+      height: 76px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      background: white;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s;
+    }
+    .card.selected-first {
+      border-color: #0984e3;
+      transform: scale(1.08);
+      box-shadow: 0 0 12px rgba(9, 132, 227, 0.5);
+    }
+
+    .operator-menu {
+      display: none;
+      justify-content: center;
+      gap: 12px;
+      margin: 16px 0;
+      height: 56px;
+    }
+    .op-btn {
+      width: 48px;
+      height: 48px;
+      font-size: 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 50%;
+      background: #0984e3;
+      color: white;
+      cursor: pointer;
+    }
+    .cancel-btn {
+      padding: 6px 14px;
+      background: #ff7675;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    .btn {
+      padding: 8px 14px;
+      font-size: 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #0984e3;
+      color: white;
+      font-weight: bold;
+      flex: 1;
+      min-width: 80px;
+    }
+    #hintBtn { background: #00b894; }
+    #nextBtn { background: #fdcb6e; color: #2d3436; }
+    #resetBtn { background: #a29bfe; }
+
+    .message {
+      margin-top: 16px;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-align: center;
+      font-size: 14px;
+    }
+    .success { background: #d5f4e6; color: #00a86b; }
+    .error { background: #ffdddd; color: #d63031; }
+    .info { background: #e3f2fd; color: #0984e3; }
+
+    /* ===== Modal 通用 ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      max-width: 90vw;
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* 玩法說明：白色背景 */
+    #instructionsModal .modal-content {
+      background: white;
+      text-align: left;
+    }
+    #langToggleInModal {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #6c5ce7;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #instructionsModal .close {
+      float: right;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #aaa;
+    }
+
+    /* 成功/失敗彈窗：縮小 */
+    #successModal .modal-content,
+    #failureModal .modal-content {
+      max-width: 320px;
+      padding: 18px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .action-btn {
+      flex: 1;
+      padding: 8px 4px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      min-height: 50px;
+    }
+    .btn-icon {
+      font-size: 18px;
+      margin-bottom: 3px;
+      display: block;
+    }
+    .restart-btn { background: #6c5ce7; color: white; }
+    .continue-btn { background: #00a86b; color: white; }
+    #failureModal .continue-btn { background: #d63031; }
+
+    .share-btn {
+      background: #e17055;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 12px;
+      width: 100%;
+    }
+    .share-btn:hover { background: #d63031; }
+
+    @media (max-width: 500px) {
+      .game-container { padding: 16px; }
+      .card { font-size: 15px; }
+      .btn { font-size: 14px; padding: 8px 10px; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-<h1 id="gameTitle">Math Royale</h1>
-<div class="score-time">
-<div>🏆 <span id="scoreLabel">分數</span>: <span id="score">0</span></div>
-<div>⏱️ <span id="timeLabel">時間</span>: <span id="timeLeft">60</span>s</div>
-</div>
-<div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
-<div class="target-row">
-<div class="target-card" id="targetCard">?</div>
-</div>
-<div class="hand-area" id="handArea"></div>
-<div class="operator-menu" id="operatorMenu">
-<button class="op-btn" onclick="selectOperator('+')">+</button>
-<button class="op-btn" onclick="selectOperator('−')">−</button>
-<button class="op-btn" onclick="selectOperator('×')">×</button>
-<button class="op-btn" onclick="selectOperator('÷')">÷</button>
-<button class="cancel-btn" onclick="cancelSelection()" id="cancelBtn">取消</button>
-</div>
-<div class="buttons">
-<button id="hintBtn" onclick="showMessage(showHint(), 'info')">提示</button>
-<button id="nextBtn" onclick="newGame()">換一題</button>
-<button id="resetBtn" onclick="resetHand()">重來</button>
-<button id="volumeBtn" onclick="toggleVolume()" title="開關音效">🔊</button>
-</div>
-<div id="message" class="message info">🎯 點擊第一張卡牌！</div>
-</div>
 
-<!-- 玩法說明彈窗 -->
-<div id="instructionsModal" class="modal">
-<div class="modal-content">
-<!-- 語言切換按鈕（僅在玩法說明中顯示） -->
-<button id="langToggleInModal" onclick="toggleLanguageInModal()">🌐</button>
-<span class="close" onclick="closeInstructions()">&times;</span>
-<div class="instructions">
-<h2 id="instructionsTitle">🎮 玩法說明</h2>
-<ul id="instructionsList">
-<li><strong>🎯 目標</strong><br>在 60 秒內用全部 5 張牌算出目標值</li>
-<li><strong>🎮 操作步驟</strong><br>1️⃣ 點擊第一張卡<br>2️⃣ 選擇運算符（+ − × ÷）<br>3️⃣ 點擊第二張卡 → 自動計算</li>
-<li><strong>✅ 允許 / ❌ 禁止</strong><br>✅ 可以使用加、減、乘、除<br>✅ 可以重複使用運算符<br>❌ 不能產生負數<br>❌ 除法必須整除（無餘數）<br>❌ 不能除以零<br>❌ 不能將兩張相同數值的卡牌相減</li>
-<li><strong>🏆 計分</strong><br>成功解題：+100 分<br>剩餘時間：每秒 +10 分</li>
-</ul>
-<p style="text-align:center; margin-top:16px;">
-<button onclick="startGameFromInstructions()" id="startGameBtn">開始遊戲！</button>
-</p>
-</div>
-</div>
-</div>
+  <!-- 頂部操作欄 -->
+  <div class="top-bar">
+    <button class="top-btn" id="helpBtn" title="玩法說明">?</button>
+    <button class="top-btn" id="volumeBtn" onclick="toggleVolume()" title="開關音效">🔊</button>
+  </div>
 
-<!-- 成功彈出畫面 -->
-<div id="successModal">
-<div class="modal-content">
-<h2 id="successTimeMessage">🎉 你花了 X 秒完成！</h2>
-<p id="successMessage"></p>
-<button class="share-btn" onclick="shareChallenge()">
-<span>📤</span>
-<span id="shareBtnText">分享挑戰</span>
-</button>
-<div class="action-buttons">
-<button class="action-btn restart-btn" onclick="restartGame()">
-<span class="btn-icon">🔄</span>
-<span id="restartBtnText">重新開始</span>
-</button>
-<button class="action-btn continue-btn" onclick="continueChallenge()">
-<span class="btn-icon">⚡</span>
-<span id="continueBtnText">繼續挑戰</span>
-</button>
-</div>
-</div>
-</div>
+  <!-- 遊戲主體 -->
+  <div class="game-container">
+    <h1 id="gameTitle">Math Royale</h1>
 
-<!-- 失敗彈出畫面 -->
-<div id="failureModal">
-<div class="modal-content">
-<h2 id="failureTitle">💪 再試一次！</h2>
-<p id="failureMessage"></p>
-<button class="share-btn" onclick="shareChallenge()">
-<span>📤</span>
-<span id="shareBtnText2">分享挑戰</span>
-</button>
-<div class="action-buttons">
-<button class="action-btn restart-btn" onclick="restartGame()">
-<span class="btn-icon">🔄</span>
-<span id="restartBtnText2">重新開始</span>
-</button>
-<button class="action-btn continue-btn" onclick="continueChallenge()">
-<span class="btn-icon">⚡</span>
-<span id="continueBtnText2">繼續挑戰</span>
-</button>
-</div>
-</div>
-</div>
+    <div class="score-time">
+      <div>🏆 <span id="scoreLabel">分數</span>: <span id="score">0</span></div>
+      <div>⏱️ <span id="timeLabel">時間</span>: <span id="timeLeft">60</span>s</div>
+    </div>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
 
-<script>
-// ===== 語言設定 =====
-const translations = {
-  zh: {
-    gameTitle: "Math Royale",
-    scoreLabel: "分數",
-    timeLabel: "時間",
-    messageStart: "🎯 點擊第一張卡牌！",
-    hintBtn: "提示",
-    nextBtn: "換一題",
-    resetBtn: "重來",
-    cancelBtn: "取消",
-    instructionsTitle: "🎮 玩法說明",
-    instructions: [
-      "<strong>🎯 目標</strong><br>在 60 秒內用全部 5 張牌算出目標值",
-      "<strong>🎮 操作步驟</strong><br>1️⃣ 點擊第一張卡<br>2️⃣ 選擇運算符（+ − × ÷）<br>3️⃣ 點擊第二張卡 → 自動計算",
-      "<strong>✅ 允許 / ❌ 禁止</strong><br>✅ 可以使用加、減、乘、除<br>✅ 可以重複使用運算符<br>❌ 不能產生負數<br>❌ 除法必須整除（無餘數）<br>❌ 不能除以零<br>❌ 不能將兩張相同數值的卡牌相減",
-      "<strong>🏆 計分</strong><br>成功解題：+100 分<br>剩餘時間：每秒 +10 分"
-    ],
-    startGameBtn: "開始遊戲！",
-    successTimeMessage: (time) => `🎉 你花了 ${time} 秒完成！`,
-    successMessages: [
-      "你真是數學天才！",
-      "太神了！完全正確！",
-      "完美計算！無可挑剔！",
-      "數學小達人就是你！",
-      "精準無誤！太厲害了！",
-      "計算超級準確！",
-      "你讓數學變得超簡單！",
-      "完美解題！真棒！"
-    ],
-    failureTitle: "💪 再試一次！",
-    failureMessages: [
-      "沒關係，再試一次！",
-      "差一點就成功了！",
-      "繼續加油，你很棒！",
-      "不要放棄，下次一定行！",
-      "學習就是不斷嘗試！",
-      "你已經很接近了！",
-      "每個錯誤都是進步的機會！",
-      "相信自己，你可以的！"
-    ],
-    shareBtnText: "分享挑戰",
-    restartBtnText: "重新開始",
-    continueBtnText: "繼續挑戰",
-    volumeBtnTitle: "開關音效",
-    messages: {
-      cannotSelfOperate: "不能與自己運算！",
-      selectFirstCard: "請先選擇第一張卡！",
-      selectedFirst: "已選擇第一張卡，請選擇運算符",
-      operatorSelected: (op) => `已選擇 "${op}"，請點擊第二張卡`,
-      switchedCard: "已切換為新的第一張卡，請選擇運算符",
-      canceled: "已取消選擇",
-      resetHand: "已重設手牌",
-      noCard: "請先選擇卡牌",
-      subtractIdentical: "❌ 不能將兩張相同數值的卡牌相減！",
-      divideByZero: "❌ 不能除以零！",
-      notDivisible: "❌ 除法結果必須為整數！",
-      negativeResult: "❌ 結果不能為負數！"
+    <div class="target-row">
+      <div class="target-card" id="targetCard">?</div>
+    </div>
+    <div class="hand-area" id="handArea"></div>
+
+    <div class="operator-menu" id="operatorMenu">
+      <button class="op-btn" onclick="selectOperator('+')">+</button>
+      <button class="op-btn" onclick="selectOperator('−')">−</button>
+      <button class="op-btn" onclick="selectOperator('×')">×</button>
+      <button class="op-btn" onclick="selectOperator('÷')">÷</button>
+      <button class="cancel-btn" onclick="cancelSelection()" id="cancelBtn">取消</button>
+    </div>
+
+    <div class="buttons">
+      <button class="btn" id="hintBtn" onclick="showMessage(showHint(), 'info')">提示</button>
+      <button class="btn" id="nextBtn" onclick="newGame()">換一題</button>
+      <button class="btn" id="resetBtn" onclick="resetHand()">重來</button>
+    </div>
+
+    <div id="message" class="message info">🎯 點擊第一張卡牌！</div>
+  </div>
+
+  <!-- 玩法說明 -->
+  <div id="instructionsModal" class="modal">
+    <div class="modal-content">
+      <button id="langToggleInModal" onclick="toggleLanguageInModal()">🌐</button>
+      <span class="close" onclick="alert(currentLang==='en'?'Please click \"Start Game!\" button to begin.':'請點擊「開始遊戲！」按鈕以開始遊戲。')">&times;</span>
+      <div class="instructions">
+        <h2 id="instructionsTitle">🎮 玩法說明</h2>
+        <ul id="instructionsList"></ul>
+        <p style="text-align:center; margin-top:16px;">
+          <button class="btn" onclick="startGameFromInstructions()" id="startGameBtn">開始遊戲！</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 成功彈窗 -->
+  <div id="successModal" class="modal">
+    <div class="modal-content">
+      <h2 id="successTimeMessage">🎉 你花了 X 秒完成！</h2>
+      <p id="successMessage"></p>
+      <button class="share-btn" onclick="shareChallenge()">
+        <span>📤</span>
+        <span id="shareBtnText">分享挑戰</span>
+      </button>
+      <div class="action-buttons">
+        <button class="action-btn restart-btn" onclick="restartGame()">
+          <span class="btn-icon">🔄</span>
+          <span id="restartBtnText">重新開始</span>
+        </button>
+        <button class="action-btn continue-btn" onclick="continueChallenge()">
+          <span class="btn-icon">⚡</span>
+          <span id="continueBtnText">繼續挑戰</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 失敗彈窗 -->
+  <div id="failureModal" class="modal">
+    <div class="modal-content">
+      <h2 id="failureTitle">💪 再試一次！</h2>
+      <p id="failureMessage"></p>
+      <button class="share-btn" onclick="shareChallenge()">
+        <span>📤</span>
+        <span id="shareBtnText2">分享挑戰</span>
+      </button>
+      <div class="action-buttons">
+        <button class="action-btn restart-btn" onclick="restartGame()">
+          <span class="btn-icon">🔄</span>
+          <span id="restartBtnText2">重新開始</span>
+        </button>
+        <button class="action-btn continue-btn" onclick="continueChallenge()">
+          <span class="btn-icon">⚡</span>
+          <span id="continueBtnText2">繼續挑戰</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== 完整 Math Royale 邏輯（來自您提供的檔案）=============== -->
+  <script>
+    // ===== 語言設定 =====
+    const translations = {
+      zh: {
+        gameTitle: "Math Royale",
+        scoreLabel: "分數",
+        timeLabel: "時間",
+        messageStart: "🎯 點擊第一張卡牌！",
+        hintBtn: "提示",
+        nextBtn: "換一題",
+        resetBtn: "重來",
+        cancelBtn: "取消",
+        instructionsTitle: "🎮 玩法說明",
+        instructions: [
+          "<strong>🎯 目標</strong><br>在 60 秒內用全部 5 張牌算出目標值",
+          "<strong>🎮 操作步驟</strong><br>1️⃣ 點擊第一張卡<br>2️⃣ 選擇運算符（+ − × ÷）<br>3️⃣ 點擊第二張卡 → 自動計算",
+          "<strong>✅ 允許 / ❌ 禁止</strong><br>✅ 可以使用加、減、乘、除<br>✅ 可以重複使用運算符<br>❌ 不能產生負數<br>❌ 除法必須整除（無餘數）<br>❌ 不能除以零<br>❌ 不能將兩張相同數值的卡牌相減",
+          "<strong>🏆 計分</strong><br>成功解題：+100 分<br>剩餘時間：每秒 +10 分"
+        ],
+        startGameBtn: "開始遊戲！",
+        successTimeMessage: (time) => `🎉 你花了 ${time} 秒完成！`,
+        successMessages: [
+          "你真是數學天才！",
+          "太神了！完全正確！",
+          "完美計算！無可挑剔！",
+          "數學小達人就是你！",
+          "精準無誤！太厲害了！",
+          "計算超級準確！",
+          "你讓數學變得超簡單！",
+          "完美解題！真棒！"
+        ],
+        failureTitle: "💪 再試一次！",
+        failureMessages: [
+          "沒關係，再試一次！",
+          "差一點就成功了！",
+          "繼續加油，你很棒！",
+          "不要放棄，下次一定行！",
+          "學習就是不斷嘗試！",
+          "你已經很接近了！",
+          "每個錯誤都是進步的機會！",
+          "相信自己，你可以的！"
+        ],
+        shareBtnText: "分享挑戰",
+        restartBtnText: "重新開始",
+        continueBtnText: "繼續挑戰",
+        volumeBtnTitle: "開關音效",
+        messages: {
+          cannotSelfOperate: "不能與自己運算！",
+          selectFirstCard: "請先選擇第一張卡！",
+          selectedFirst: "已選擇第一張卡，請選擇運算符",
+          operatorSelected: (op) => `已選擇 "${op}"，請點擊第二張卡`,
+          switchedCard: "已切換為新的第一張卡，請選擇運算符",
+          canceled: "已取消選擇",
+          resetHand: "已重設手牌",
+          noCard: "請先選擇卡牌",
+          subtractIdentical: "❌ 不能將兩張相同數值的卡牌相減！",
+          divideByZero: "❌ 不能除以零！",
+          notDivisible: "❌ 除法結果必須為整數！",
+          negativeResult: "❌ 結果不能為負數！"
+        }
+      },
+      en: {
+        gameTitle: "Math Royale",
+        scoreLabel: "Score",
+        timeLabel: "Time",
+        messageStart: "🎯 Click the first card!",
+        hintBtn: "Hint",
+        nextBtn: "Next",
+        resetBtn: "Reset",
+        cancelBtn: "Cancel",
+        instructionsTitle: "🎮 How to Play",
+        instructions: [
+          "<strong>🎯 Goal</strong><br>Use all 5 cards to reach the target value within 60 seconds",
+          "<strong>🎮 How to Play</strong><br>1️⃣ Click the first card<br>2️⃣ Choose an operator (+ − × ÷)<br>3️⃣ Click the second card → auto-calculate",
+          "<strong>✅ Allowed / ❌ Not Allowed</strong><br>✅ Use +, −, ×, ÷ freely<br>✅ Reuse operators as needed<br>❌ No negative results<br>❌ Division must be exact (no remainder)<br>❌ Cannot divide by zero<br>❌ Cannot subtract two identical cards",
+          "<strong>🏆 Scoring</strong><br>Success: +100 points<br>Bonus: +10 points per second remaining"
+        ],
+        startGameBtn: "Start Game!",
+        successTimeMessage: (time) => `🎉 You completed it in ${time} seconds!`,
+        successMessages: [
+          "You're a math genius!",
+          "Amazing! Perfectly correct!",
+          "Flawless calculation!",
+          "You're the Math Master!",
+          "Precise and accurate!",
+          "Superb calculation!",
+          "You made math look easy!",
+          "Perfect solution! Well done!"
+        ],
+        failureTitle: "💪 Try again!",
+        failureMessages: [
+          "Don't worry, try again!",
+          "So close to success!",
+          "Keep going, you're great!",
+          "Never give up, you'll make it next time!",
+          "Learning is all about trying!",
+          "You're almost there!",
+          "Every mistake is a step forward!",
+          "Believe in yourself, you can do it!"
+        ],
+        shareBtnText: "Share Challenge",
+        restartBtnText: "Restart",
+        continueBtnText: "Continue",
+        volumeBtnTitle: "Toggle Sound",
+        messages: {
+          cannotSelfOperate: "Cannot operate with itself!",
+          selectFirstCard: "Please select the first card first!",
+          selectedFirst: "First card selected, please choose an operator",
+          operatorSelected: (op) => `Operator "${op}" selected, please click the second card`,
+          switchedCard: "Switched to a new first card, please choose an operator",
+          canceled: "Selection canceled",
+          resetHand: "Hand reset",
+          noCard: "Please select a card first",
+          subtractIdentical: "❌ Cannot subtract two identical cards!",
+          divideByZero: "❌ Cannot divide by zero!",
+          notDivisible: "❌ Division result must be an integer!",
+          negativeResult: "❌ Result cannot be negative!"
+        }
+      }
+    };
+    let currentLang = 'zh';
+
+    function toggleLanguageInModal() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      updateLanguage();
+      const url = new URL(window.location);
+      if (currentLang === 'en') {
+        url.searchParams.set('lang', 'en');
+      } else {
+        url.searchParams.delete('lang');
+      }
+      window.history.replaceState({}, '', url);
     }
-  },
-  en: {
-    gameTitle: "Math Royale",
-    scoreLabel: "Score",
-    timeLabel: "Time",
-    messageStart: "🎯 Click the first card!",
-    hintBtn: "Hint",
-    nextBtn: "Next",
-    resetBtn: "Reset",
-    cancelBtn: "Cancel",
-    instructionsTitle: "🎮 How to Play",
-    instructions: [
-      "<strong>🎯 Goal</strong><br>Use all 5 cards to reach the target value within 60 seconds",
-      "<strong>🎮 How to Play</strong><br>1️⃣ Click the first card<br>2️⃣ Choose an operator (+ − × ÷)<br>3️⃣ Click the second card → auto-calculate",
-      "<strong>✅ Allowed / ❌ Not Allowed</strong><br>✅ Use +, −, ×, ÷ freely<br>✅ Reuse operators as needed<br>❌ No negative results<br>❌ Division must be exact (no remainder)<br>❌ Cannot divide by zero<br>❌ Cannot subtract two identical cards",
-      "<strong>🏆 Scoring</strong><br>Success: +100 points<br>Bonus: +10 points per second remaining"
-    ],
-    startGameBtn: "Start Game!",
-    successTimeMessage: (time) => `🎉 You completed it in ${time} seconds!`,
-    successMessages: [
-      "You're a math genius!",
-      "Amazing! Perfectly correct!",
-      "Flawless calculation!",
-      "You're the Math Master!",
-      "Precise and accurate!",
-      "Superb calculation!",
-      "You made math look easy!",
-      "Perfect solution! Well done!"
-    ],
-    failureTitle: "💪 Try again!",
-    failureMessages: [
-      "Don't worry, try again!",
-      "So close to success!",
-      "Keep going, you're great!",
-      "Never give up, you'll make it next time!",
-      "Learning is all about trying!",
-      "You're almost there!",
-      "Every mistake is a step forward!",
-      "Believe in yourself, you can do it!"
-    ],
-    shareBtnText: "Share Challenge",
-    restartBtnText: "Restart",
-    continueBtnText: "Continue",
-    volumeBtnTitle: "Toggle Sound",
-    messages: {
-      cannotSelfOperate: "Cannot operate with itself!",
-      selectFirstCard: "Please select the first card first!",
-      selectedFirst: "First card selected, please choose an operator",
-      operatorSelected: (op) => `Operator "${op}" selected, please click the second card`,
-      switchedCard: "Switched to a new first card, please choose an operator",
-      canceled: "Selection canceled",
-      resetHand: "Hand reset",
-      noCard: "Please select a card first",
-      subtractIdentical: "❌ Cannot subtract two identical cards!",
-      divideByZero: "❌ Cannot divide by zero!",
-      notDivisible: "❌ Division result must be an integer!",
-      negativeResult: "❌ Result cannot be negative!"
+
+    function updateLanguage() {
+      const t = translations[currentLang];
+      document.getElementById('gameTitle').textContent = t.gameTitle;
+      document.getElementById('scoreLabel').textContent = t.scoreLabel;
+      document.getElementById('timeLabel').textContent = t.timeLabel;
+      document.getElementById('hintBtn').textContent = t.hintBtn;
+      document.getElementById('nextBtn').textContent = t.nextBtn;
+      document.getElementById('resetBtn').textContent = t.resetBtn;
+      document.getElementById('cancelBtn').textContent = t.cancelBtn;
+      document.getElementById('volumeBtn').title = t.volumeBtnTitle;
+      document.getElementById('instructionsTitle').textContent = t.instructionsTitle;
+      const instructionsList = document.getElementById('instructionsList');
+      instructionsList.innerHTML = '';
+      t.instructions.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = item;
+        instructionsList.appendChild(li);
+      });
+      document.getElementById('startGameBtn').textContent = t.startGameBtn;
+      document.getElementById('shareBtnText').textContent = t.shareBtnText;
+      document.getElementById('shareBtnText2').textContent = t.shareBtnText;
+      document.getElementById('restartBtnText').textContent = t.restartBtnText;
+      document.getElementById('restartBtnText2').textContent = t.restartBtnText;
+      document.getElementById('continueBtnText').textContent = t.continueBtnText;
+      document.getElementById('continueBtnText2').textContent = t.continueBtnText;
+      document.getElementById('failureTitle').textContent = t.failureTitle;
+      if (!isGameActive) {
+        document.getElementById('message').textContent = t.messageStart;
+        document.getElementById('message').className = 'message info';
+      }
     }
-  }
-};
 
-let currentLang = 'zh'; // 預設中文
-
-// ===== 語言切換（僅在玩法說明中）=====
-function toggleLanguageInModal() {
-  currentLang = currentLang === 'zh' ? 'en' : 'zh';
-  updateLanguage();
-  // 更新 URL 參數
-  const url = new URL(window.location);
-  if (currentLang === 'en') {
-    url.searchParams.set('lang', 'en');
-  } else {
-    url.searchParams.delete('lang');
-  }
-  window.history.replaceState({}, '', url);
-}
-
-// ===== 更新所有文字 =====
-function updateLanguage() {
-  const t = translations[currentLang];
-  
-  // 頁面標題
-  document.getElementById('gameTitle').textContent = t.gameTitle;
-  
-  // 計分區
-  document.getElementById('scoreLabel').textContent = t.scoreLabel;
-  document.getElementById('timeLabel').textContent = t.timeLabel;
-  
-  // 按鈕
-  document.getElementById('hintBtn').textContent = t.hintBtn;
-  document.getElementById('nextBtn').textContent = t.nextBtn;
-  document.getElementById('resetBtn').textContent = t.resetBtn;
-  document.getElementById('cancelBtn').textContent = t.cancelBtn;
-  document.getElementById('volumeBtn').title = t.volumeBtnTitle;
-  
-  // 玩法說明
-  document.getElementById('instructionsTitle').textContent = t.instructionsTitle;
-  const instructionsList = document.getElementById('instructionsList');
-  instructionsList.innerHTML = '';
-  t.instructions.forEach(item => {
-    const li = document.createElement('li');
-    li.innerHTML = item;
-    instructionsList.appendChild(li);
-  });
-  document.getElementById('startGameBtn').textContent = t.startGameBtn;
-  
-  // 成功/失敗彈窗
-  document.getElementById('shareBtnText').textContent = t.shareBtnText;
-  document.getElementById('shareBtnText2').textContent = t.shareBtnText;
-  document.getElementById('restartBtnText').textContent = t.restartBtnText;
-  document.getElementById('restartBtnText2').textContent = t.restartBtnText;
-  document.getElementById('continueBtnText').textContent = t.continueBtnText;
-  document.getElementById('continueBtnText2').textContent = t.continueBtnText;
-  document.getElementById('failureTitle').textContent = t.failureTitle;
-  
-  // 初始訊息
-  if (!isGameActive) {
-    document.getElementById('message').textContent = t.messageStart;
-    document.getElementById('message').className = 'message info';
-  }
-}
-
-// ===== 解析 URL 語言參數 =====
-function parseUrlLanguage() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const lang = urlParams.get('lang');
-  if (lang === 'en') {
-    return 'en';
-  }
-  return 'zh';
-}
-
-// ===== 全域狀態 =====
-const VALUE_TO_RANK = {1:'A',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K'};
-const SUITS = ['♠','♥','♦','♣'];
-let currentTarget = null;
-let originalHand = [];
-let selectedCard1 = null;
-let selectedOperator = null;
-let score = 0;
-let combo = 0;
-let timeLeft = 60;
-let timer = null;
-let isGameActive = false;
-let currentStep = 0;
-let currentGameSnapshot = null;
-let lastUsedPattern = -1;
-let generatedPuzzles = new Set();
-let volumeEnabled = true;
-let currentPuzzle = null;
-
-// ===== 工具函數 =====
-function getRandomSuit() {
-return SUITS[Math.floor(Math.random() * SUITS.length)];
-}
-function valueToDisplay(value) {
-if (value >= 1 && value <= 13) {
-return VALUE_TO_RANK[value] + getRandomSuit();
-}
-return String(Math.round(value * 100) / 100);
-}
-function createCard(value, isNew = false) {
-const card = document.createElement('div');
-card.className = 'card';
-card.textContent = valueToDisplay(value);
-card.dataset.value = value;
-card.onclick = (e) => {
-e.stopPropagation();
-selectCard(card);
-};
-return card;
-}
-
-// ===== 音量控制 =====
-function toggleVolume() {
-volumeEnabled = !volumeEnabled;
-const volumeBtn = document.getElementById('volumeBtn');
-if (volumeEnabled) {
-volumeBtn.textContent = '🔊';
-volumeBtn.classList.remove('muted');
-} else {
-volumeBtn.textContent = '🔇';
-volumeBtn.classList.add('muted');
-}
-}
-
-// ===== 計算音效（點擊運算符時）=====
-function playCalculationSound(operation) {
-if (!volumeEnabled) return;
-if (!window.AudioContext && !window.webkitAudioContext) return;
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const ctx = new AudioContext();
-let time = 0;
-switch(operation) {
-case '+':
-{
-const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
-o1.frequency.value = 523; g1.gain.value = 0.3;
-o1.connect(g1); g1.connect(ctx.destination);
-o1.start(time); o1.stop(time + 0.2);
-const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
-o2.frequency.value = 587; g2.gain.value = 0.3;
-o2.connect(g2); g2.connect(ctx.destination);
-o2.start(time + 0.2); o2.stop(time + 0.4);
-setTimeout(() => ctx.close(), 450);
-break;
-}
-case '−':
-{
-const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
-o1.frequency.value = 587; g1.gain.value = 0.3;
-o1.connect(g1); g1.connect(ctx.destination);
-o1.start(time); o1.stop(time + 0.2);
-const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
-o2.frequency.value = 523; g2.gain.value = 0.3;
-o2.connect(g2); g2.connect(ctx.destination);
-o2.start(time + 0.2); o2.stop(time + 0.4);
-setTimeout(() => ctx.close(), 450);
-break;
-}
-case '×':
-{
-const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
-o1.frequency.value = 523; g1.gain.value = 0.3;
-o1.connect(g1); g1.connect(ctx.destination);
-o1.start(time); o1.stop(time + 0.2);
-const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
-o2.frequency.value = 659; g2.gain.value = 0.3;
-o2.connect(g2); g2.connect(ctx.destination);
-o2.start(time); o2.stop(time + 0.2);
-const o3 = ctx.createOscillator(); const g3 = ctx.createGain();
-o3.frequency.value = 784; g3.gain.value = 0.3;
-o3.connect(g3); g3.connect(ctx.destination);
-o3.start(time + 0.1); o3.stop(time + 0.3);
-setTimeout(() => ctx.close(), 350);
-break;
-}
-case '÷':
-{
-const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
-o1.frequency.value = 784; g1.gain.value = 0.3;
-o1.connect(g1); g1.connect(ctx.destination);
-o1.start(time); o1.stop(time + 0.15);
-const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
-o2.frequency.value = 1046; g2.gain.value = 0.3;
-o2.connect(g2); g2.connect(ctx.destination);
-o2.start(time + 0.15); o2.stop(time + 0.3);
-setTimeout(() => ctx.close(), 350);
-break;
-}
-}
-}
-
-// ===== 成功/失敗音效 =====
-function playSuccessSound() {
-if (!volumeEnabled) return;
-if (!window.AudioContext && !window.webkitAudioContext) return;
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const ctx = new AudioContext();
-const notes = [523, 659, 784, 1046];
-const durations = [0.15, 0.15, 0.15, 0.2];
-let time = 0;
-notes.forEach((freq, i) => {
-const osc = ctx.createOscillator();
-const gain = ctx.createGain();
-osc.frequency.value = freq;
-gain.gain.value = 0.3;
-osc.connect(gain);
-gain.connect(ctx.destination);
-osc.start(time);
-osc.stop(time + durations[i]);
-time += durations[i] + (i === 2 ? 0.15 : 0);
-});
-setTimeout(() => ctx.close(), 650);
-}
-function playFailureSound() {
-if (!volumeEnabled) return;
-if (!window.AudioContext && !window.webkitAudioContext) return;
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const ctx = new AudioContext();
-const notes = [523, 440, 392];
-const times = [0, 0.2, 0.4];
-const durations = [0.2, 0.2, 0.25];
-notes.forEach((freq, i) => {
-const osc = ctx.createOscillator();
-const gain = ctx.createGain();
-osc.frequency.value = freq;
-gain.gain.value = 0.3;
-osc.connect(gain);
-gain.connect(ctx.destination);
-osc.start(times[i]);
-osc.stop(times[i] + durations[i]);
-});
-setTimeout(() => ctx.close(), 700);
-}
-
-// ===== ✅ Ready? Go! 音效（已取消所有音效）=====
-function playReadyGoSound(callback) {
-  // 已根據需求取消所有 Ready? Go! 音效
-  if (callback) {
-    setTimeout(callback, 100); // 微小延遲以保持流程一致性
-  }
-}
-
-// ===== 每10秒提示音 =====
-function playTenSecondBeep() {
-if (!volumeEnabled) return;
-if (!window.AudioContext && !window.webkitAudioContext) return;
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const ctx = new AudioContext();
-const osc = ctx.createOscillator();
-const gain = ctx.createGain();
-osc.type = 'sine';
-osc.frequency.value = 660;
-gain.gain.value = 0.2;
-osc.connect(gain);
-gain.connect(ctx.destination);
-osc.start(0);
-osc.stop(0.15);
-setTimeout(() => ctx.close(), 200);
-}
-
-// ===== 倒數5秒音效 =====
-function playCountdownVoice(num) {
-  // 優先使用語音合成
-  if ('speechSynthesis' in window) {
-    const words = {5: 'Five', 4: 'Four', 3: 'Three', 2: 'Two', 1: 'One'};
-    const word = words[num];
-    if (word) {
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = 'en-US';
-      utterance.rate = 1.0;
-      utterance.volume = 0.8;
-      speechSynthesis.speak(utterance);
-      return;
+    function parseUrlLanguage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const lang = urlParams.get('lang');
+      if (lang === 'en') return 'en';
+      return 'zh';
     }
-  }
 
-  // Fallback to beep (only if volume is enabled)
-  if (!volumeEnabled) return;
-  if (!window.AudioContext && !window.webkitAudioContext) return;
+    // ===== 全域狀態 =====
+    const VALUE_TO_RANK = {1:'A',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K'};
+    const SUITS = ['♠','♥','♦','♣'];
+    let currentTarget = null;
+    let originalHand = [];
+    let selectedCard1 = null;
+    let selectedOperator = null;
+    let score = 0;
+    let combo = 0;
+    let timeLeft = 60;
+    let timer = null;
+    let isGameActive = false;
+    let currentStep = 0;
+    let currentGameSnapshot = null;
+    let lastUsedPattern = -1;
+    let generatedPuzzles = new Set();
+    let volumeEnabled = true;
+    let currentPuzzle = null;
 
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const ctx = new AudioContext();
+    function getRandomSuit() {
+      return SUITS[Math.floor(Math.random() * SUITS.length)];
+    }
 
-  const frequencies = {5: 440, 4: 523, 3: 587, 2: 659, 1: 784};
-  const freq = frequencies[num] || 440;
+    function valueToDisplay(value) {
+      if (value >= 1 && value <= 13) {
+        return VALUE_TO_RANK[value] + getRandomSuit();
+      }
+      return String(Math.round(value * 100) / 100);
+    }
 
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  gain.gain.value = 0.3;
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(0);
-  osc.stop(0.3);
+    function createCard(value, isNew = false) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.textContent = valueToDisplay(value);
+      card.dataset.value = value;
+      card.onclick = (e) => {
+        e.stopPropagation();
+        selectCard(card);
+      };
+      return card;
+    }
 
-  // Auto-close after delay
-  setTimeout(() => {
-    ctx.close().catch(() => {});
-  }, 350);
-}
+    function toggleVolume() {
+      volumeEnabled = !volumeEnabled;
+      const volumeBtn = document.getElementById('volumeBtn');
+      if (volumeEnabled) {
+        volumeBtn.textContent = '🔊';
+        volumeBtn.classList.remove('muted');
+      } else {
+        volumeBtn.textContent = '🔇';
+        volumeBtn.classList.add('muted');
+      }
+    }
 
-// ===== 鼓勵語音（計算成功後）=====
-function playEncouragementSound() {
-if (!volumeEnabled) return;
-const phrases = ["wonderful", "fantastic", "great", "Excellent", "Amazing"];
-const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-if ('speechSynthesis' in window) {
-const utterance = new SpeechSynthesisUtterance(phrase);
-utterance.lang = 'en-US';
-utterance.rate = 1.0;
-utterance.pitch = 1.2;
-utterance.volume = 0.9;
-speechSynthesis.speak(utterance);
-return;
-}
-// Fallback to tone sequence
-if (!window.AudioContext && !window.webkitAudioContext) return;
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const ctx = new AudioContext();
-const notes = [523, 659, 784];
-let time = 0;
-for (let i = 0; i < notes.length; i++) {
-const osc = ctx.createOscillator();
-const gain = ctx.createGain();
-osc.frequency.value = notes[i];
-gain.gain.value = 0.25;
-osc.connect(gain);
-gain.connect(ctx.destination);
-osc.start(time + i * 0.1);
-osc.stop(time + i * 0.1 + 0.12);
-}
-setTimeout(() => ctx.close(), 350);
-}
+    function playCalculationSound(operation) {
+      if (!volumeEnabled) return;
+      if (!window.AudioContext && !window.webkitAudioContext) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      let time = 0;
+      switch(operation) {
+        case '+':
+          {
+            const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+            o1.frequency.value = 523; g1.gain.value = 0.3;
+            o1.connect(g1); g1.connect(ctx.destination);
+            o1.start(time); o1.stop(time + 0.2);
+            const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+            o2.frequency.value = 587; g2.gain.value = 0.3;
+            o2.connect(g2); g2.connect(ctx.destination);
+            o2.start(time + 0.2); o2.stop(time + 0.4);
+            setTimeout(() => ctx.close(), 450);
+            break;
+          }
+        case '−':
+          {
+            const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+            o1.frequency.value = 587; g1.gain.value = 0.3;
+            o1.connect(g1); g1.connect(ctx.destination);
+            o1.start(time); o1.stop(time + 0.2);
+            const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+            o2.frequency.value = 523; g2.gain.value = 0.3;
+            o2.connect(g2); g2.connect(ctx.destination);
+            o2.start(time + 0.2); o2.stop(time + 0.4);
+            setTimeout(() => ctx.close(), 450);
+            break;
+          }
+        case '×':
+          {
+            const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+            o1.frequency.value = 523; g1.gain.value = 0.3;
+            o1.connect(g1); g1.connect(ctx.destination);
+            o1.start(time); o1.stop(time + 0.2);
+            const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+            o2.frequency.value = 659; g2.gain.value = 0.3;
+            o2.connect(g2); g2.connect(ctx.destination);
+            o2.start(time); o2.stop(time + 0.2);
+            const o3 = ctx.createOscillator(); const g3 = ctx.createGain();
+            o3.frequency.value = 784; g3.gain.value = 0.3;
+            o3.connect(g3); g3.connect(ctx.destination);
+            o3.start(time + 0.1); o3.stop(time + 0.3);
+            setTimeout(() => ctx.close(), 350);
+            break;
+          }
+        case '÷':
+          {
+            const o1 = ctx.createOscillator(); const g1 = ctx.createGain();
+            o1.frequency.value = 784; g1.gain.value = 0.3;
+            o1.connect(g1); g1.connect(ctx.destination);
+            o1.start(time); o1.stop(time + 0.15);
+            const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+            o2.frequency.value = 1046; g2.gain.value = 0.3;
+            o2.connect(g2); g2.connect(ctx.destination);
+            o2.start(time + 0.15); o2.stop(time + 0.3);
+            setTimeout(() => ctx.close(), 350);
+            break;
+          }
+      }
+    }
 
-// ===== 計時系統 =====
-function startTimer() {
-if (timer) clearInterval(timer);
-timeLeft = 60;
-isGameActive = true;
-updateTimerUI();
-timer = setInterval(() => {
-if (!isGameActive || currentTarget === null) {
-clearInterval(timer);
-timer = null;
-return;
-}
-timeLeft--;
-updateTimerUI();
-if (timeLeft > 5 && timeLeft % 10 === 0) {
-playTenSecondBeep();
-}
-if (timeLeft >= 1 && timeLeft <= 5) {
-playCountdownVoice(timeLeft);
-}
-if (timeLeft <= 0) {
-clearInterval(timer);
-timer = null;
-isGameActive = false;
-if (currentTarget !== null && originalHand.length > 0) {
-showFailureScreen();
-}
-}
-}, 1000);
-}
-function updateTimerUI() {
-document.getElementById('timeLeft').textContent = timeLeft;
-const fill = document.getElementById('timerFill');
-if (fill) {
-const percent = Math.max(0, timeLeft / 60 * 100);
-fill.style.width = percent + '%';
-if (timeLeft <= 18) {
-fill.style.background = '#d63031';
-} else {
-fill.style.background = '#0984e3';
-}
-}
-}
+    function playSuccessSound() {
+      if (!volumeEnabled) return;
+      if (!window.AudioContext && !window.webkitAudioContext) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const notes = [523, 659, 784, 1046];
+      const durations = [0.15, 0.15, 0.15, 0.2];
+      let time = 0;
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.value = 0.3;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(time);
+        osc.stop(time + durations[i]);
+        time += durations[i] + (i === 2 ? 0.15 : 0);
+      });
+      setTimeout(() => ctx.close(), 650);
+    }
 
-// ===== 計分系統 =====
-function addScore(base, timeBonus = 0, isCombo = false) {
-let total = base + timeBonus;
-if (isCombo && combo > 1) {
-total = Math.floor(total * (1 + (combo - 1) * 0.2));
-}
-score += total;
-document.getElementById('score').textContent = score;
-}
+    function playFailureSound() {
+      if (!volumeEnabled) return;
+      if (!window.AudioContext && !window.webkitAudioContext) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const notes = [523, 440, 392];
+      const times = [0, 0.2, 0.4];
+      const durations = [0.2, 0.2, 0.25];
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.value = 0.3;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(times[i]);
+        osc.stop(times[i] + durations[i]);
+      });
+      setTimeout(() => ctx.close(), 700);
+    }
 
-// ===== 核心邏輯：卡牌選擇 =====
-function selectCard(card) {
-if (!isGameActive) return;
-if (selectedOperator !== null) {
-if (card === selectedCard1) {
-showMessage(translations[currentLang].messages.cannotSelfOperate, 'error');
-return;
-}
-performCalculation(card);
-return;
-}
-if (selectedCard1 === null) {
-selectedCard1 = card;
-card.classList.add('selected-first');
-document.getElementById('operatorMenu').style.display = 'flex';
-showMessage(translations[currentLang].messages.selectedFirst, 'info');
-} else if (card === selectedCard1) {
-clearSelection();
-showMessage(translations[currentLang].messages.canceled, 'info');
-} else {
-selectedCard1.classList.remove('selected-first');
-selectedCard1 = card;
-card.classList.add('selected-first');
-showMessage(translations[currentLang].messages.switchedCard, 'info');
-}
-}
-function selectOperator(op) {
-if (selectedCard1 === null || !isGameActive) {
-showMessage(translations[currentLang].messages.selectFirstCard, 'error');
-return;
-}
-selectedOperator = op;
-showMessage(translations[currentLang].messages.operatorSelected(op), 'info');
-playCalculationSound(op);
-}
-function performCalculation(secondCard) {
-  const val1 = parseFloat(selectedCard1.dataset.value);
-  const val2 = parseFloat(secondCard.dataset.value);
-  let result;
-  switch(selectedOperator) {
-    case '+':
-      result = val1 + val2;
-      break;
-    case '−':
-      if (Math.abs(val1 - val2) < 1e-9) {
-        showMessage(translations[currentLang].messages.subtractIdentical, 'error');
+    function playReadyGoSound(callback) {
+      if (callback) {
+        setTimeout(callback, 100);
+      }
+    }
+
+    function playTenSecondBeep() {
+      if (!volumeEnabled) return;
+      if (!window.AudioContext && !window.webkitAudioContext) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 660;
+      gain.gain.value = 0.2;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(0);
+      osc.stop(0.15);
+      setTimeout(() => ctx.close(), 200);
+    }
+
+    function playCountdownVoice(num) {
+      if ('speechSynthesis' in window) {
+        const words = {5: 'Five', 4: 'Four', 3: 'Three', 2: 'Two', 1: 'One'};
+        const word = words[num];
+        if (word) {
+          const utterance = new SpeechSynthesisUtterance(word);
+          utterance.lang = 'en-US';
+          utterance.rate = 1.0;
+          utterance.volume = 0.8;
+          speechSynthesis.speak(utterance);
+          return;
+        }
+      }
+      if (!volumeEnabled) return;
+      if (!window.AudioContext && !window.webkitAudioContext) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const frequencies = {5: 440, 4: 523, 3: 587, 2: 659, 1: 784};
+      const freq = frequencies[num] || 440;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = 0.3;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(0);
+      osc.stop(0.3);
+      setTimeout(() => {
+        ctx.close().catch(() => {});
+      }, 350);
+    }
+
+    function playEncouragementSound() {
+      if (!volumeEnabled) return;
+      const phrases = ["wonderful", "fantastic", "great", "Excellent", "Amazing"];
+      const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(phrase);
+        utterance.lang = 'en-US';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.2;
+        utterance.volume = 0.9;
+        speechSynthesis.speak(utterance);
+        return;
+      }
+      if (!window.AudioContext && !window.webkitAudioContext) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const notes = [523, 659, 784];
+      let time = 0;
+      for (let i = 0; i < notes.length; i++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = notes[i];
+        gain.gain.value = 0.25;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(time + i * 0.1);
+        osc.stop(time + i * 0.1 + 0.12);
+      }
+      setTimeout(() => ctx.close(), 350);
+    }
+
+    function startTimer() {
+      if (timer) clearInterval(timer);
+      timeLeft = 60;
+      isGameActive = true;
+      updateTimerUI();
+      timer = setInterval(() => {
+        if (!isGameActive || currentTarget === null) {
+          clearInterval(timer);
+          timer = null;
+          return;
+        }
+        timeLeft--;
+        updateTimerUI();
+        if (timeLeft > 5 && timeLeft % 10 === 0) {
+          playTenSecondBeep();
+        }
+        if (timeLeft >= 1 && timeLeft <= 5) {
+          playCountdownVoice(timeLeft);
+        }
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          timer = null;
+          isGameActive = false;
+          if (currentTarget !== null && originalHand.length > 0) {
+            showFailureScreen();
+          }
+        }
+      }, 1000);
+    }
+
+    function updateTimerUI() {
+      document.getElementById('timeLeft').textContent = timeLeft;
+      const fill = document.getElementById('timerFill');
+      if (fill) {
+        const percent = Math.max(0, timeLeft / 60 * 100);
+        fill.style.width = percent + '%';
+        if (timeLeft <= 18) {
+          fill.style.background = '#d63031';
+        } else {
+          fill.style.background = '#0984e3';
+        }
+      }
+    }
+
+    function addScore(base, timeBonus = 0, isCombo = false) {
+      let total = base + timeBonus;
+      if (isCombo && combo > 1) {
+        total = Math.floor(total * (1 + (combo - 1) * 0.2));
+      }
+      score += total;
+      document.getElementById('score').textContent = score;
+    }
+
+    function selectCard(card) {
+      if (!isGameActive) return;
+      if (selectedOperator !== null) {
+        if (card === selectedCard1) {
+          showMessage(translations[currentLang].messages.cannotSelfOperate, 'error');
+          return;
+        }
+        performCalculation(card);
+        return;
+      }
+      if (selectedCard1 === null) {
+        selectedCard1 = card;
+        card.classList.add('selected-first');
+        document.getElementById('operatorMenu').style.display = 'flex';
+        showMessage(translations[currentLang].messages.selectedFirst, 'info');
+      } else if (card === selectedCard1) {
+        clearSelection();
+        showMessage(translations[currentLang].messages.canceled, 'info');
+      } else {
+        selectedCard1.classList.remove('selected-first');
+        selectedCard1 = card;
+        card.classList.add('selected-first');
+        showMessage(translations[currentLang].messages.switchedCard, 'info');
+      }
+    }
+
+    function selectOperator(op) {
+      if (selectedCard1 === null || !isGameActive) {
+        showMessage(translations[currentLang].messages.selectFirstCard, 'error');
+        return;
+      }
+      selectedOperator = op;
+      showMessage(translations[currentLang].messages.operatorSelected(op), 'info');
+      playCalculationSound(op);
+    }
+
+    function performCalculation(secondCard) {
+      const val1 = parseFloat(selectedCard1.dataset.value);
+      const val2 = parseFloat(secondCard.dataset.value);
+      let result;
+      switch(selectedOperator) {
+        case '+':
+          result = val1 + val2;
+          break;
+        case '−':
+          if (Math.abs(val1 - val2) < 1e-9) {
+            showMessage(translations[currentLang].messages.subtractIdentical, 'error');
+            clearSelection();
+            return;
+          }
+          result = val1 - val2;
+          break;
+        case '×':
+          result = val1 * val2;
+          break;
+        case '÷':
+          if (Math.abs(val2) < 1e-9) {
+            showMessage(translations[currentLang].messages.divideByZero, 'error');
+            clearSelection();
+            return;
+          }
+          if (Math.abs(val1 % val2) > 1e-9) {
+            showMessage(translations[currentLang].messages.notDivisible, 'error');
+            clearSelection();
+            return;
+          }
+          result = val1 / val2;
+          break;
+        default:
+          clearSelection();
+          return;
+      }
+      if (result < 0) {
+        showMessage(translations[currentLang].messages.negativeResult, 'error');
         clearSelection();
         return;
       }
-      result = val1 - val2;
-      break;
-    case '×':
-      result = val1 * val2;
-      break;
-    case '÷':
-      if (Math.abs(val2) < 1e-9) {
-        showMessage(translations[currentLang].messages.divideByZero, 'error');
-        clearSelection();
-        return;
-      }
-      if (Math.abs(val1 % val2) > 1e-9) {
-        showMessage(translations[currentLang].messages.notDivisible, 'error');
-        clearSelection();
-        return;
-      }
-      result = val1 / val2;
-      break;
-    default:
+      selectedCard1.remove();
+      secondCard.remove();
+      const newCard = createCard(result, true);
+      document.getElementById('handArea').appendChild(newCard);
       clearSelection();
-      return;
-  }
-  if (result < 0) {
-    showMessage(translations[currentLang].messages.negativeResult, 'error');
-    clearSelection();
-    return;
-  }
-  
-  // 移除卡牌並新增結果
-  selectedCard1.remove();
-  secondCard.remove();
-  const newCard = createCard(result, true);
-  document.getElementById('handArea').appendChild(newCard);
-  clearSelection();
-  currentStep++;
-  
-  // ✅ 關鍵修正：僅在非最後一步時播放鼓勵音效
-  const remainingCardsAfter = document.querySelectorAll('.card').length;
-  if (remainingCardsAfter > 1) {
-    playEncouragementSound();
-  }
-  
-  // 檢查是否完成
-  if (remainingCardsAfter === 1) {
-    const finalValue = parseFloat(document.querySelector('.card').dataset.value);
-    if (Math.abs(finalValue - currentTarget) < 1e-6) {
-      const timeBonus = timeLeft * 10;
-      combo++;
-      addScore(100, timeBonus, true);
-      clearInterval(timer);
-      timer = null;
-      isGameActive = false;
-      showSuccessScreen();
-    } else {
+      currentStep++;
+      const remainingCardsAfter = document.querySelectorAll('.card').length;
+      if (remainingCardsAfter > 1) {
+        playEncouragementSound();
+      }
+      if (remainingCardsAfter === 1) {
+        const finalValue = parseFloat(document.querySelector('.card').dataset.value);
+        if (Math.abs(finalValue - currentTarget) < 1e-6) {
+          const timeBonus = timeLeft * 10;
+          combo++;
+          addScore(100, timeBonus, true);
+          clearInterval(timer);
+          timer = null;
+          isGameActive = false;
+          showSuccessScreen();
+        } else {
+          combo = 0;
+          clearInterval(timer);
+          timer = null;
+          isGameActive = false;
+          showFailureScreen();
+        }
+      }
+    }
+
+    function cancelSelection() {
+      clearSelection();
+      showMessage(translations[currentLang].messages.canceled, 'info');
+    }
+
+    function clearSelection() {
+      if (selectedCard1) {
+        selectedCard1.classList.remove('selected-first');
+        selectedCard1 = null;
+      }
+      selectedOperator = null;
+      document.getElementById('operatorMenu').style.display = 'none';
+    }
+
+    function resetHand() {
+      if (!isGameActive) return;
+      clearSelection();
+      const handArea = document.getElementById('handArea');
+      handArea.innerHTML = '';
+      for (let i = 0; i < originalHand.length; i++) {
+        handArea.appendChild(createCard(originalHand[i]));
+      }
+      currentStep = 0;
+      startTimer();
+      showMessage(translations[currentLang].messages.resetHand, 'info');
+    }
+
+    function showHint() {
+      const cards = Array.from(document.querySelectorAll('.card')).map(card =>
+        parseFloat(card.dataset.value)
+      );
+      if (cards.length === 0) {
+        return translations[currentLang].messages.noCard;
+      }
+      const sortedCards = [...cards].sort((a, b) => a - b);
+      const target = currentTarget;
+      const hints = {
+        zh: {
+          step1: {
+            hasOne: "有1的話，先用1和其他數字相加",
+            smallNumbers: "先合併兩個小數字（≤7）",
+            bigNumbers: "有大數字（≥10）時，考慮用減法或除法",
+            default: "尋找可以整除的數字對"
+          },
+          step2: {
+            bigNumbers: "大數字（>10）建議用減法或除法",
+            hasOne: "1可以用來微調結果",
+            smallNumbers: "小數字（≤7）適合用來調整結果",
+            factor: "尋找目標值的因數",
+            default: "嘗試製造目標值的因數"
+          },
+          step3: {
+            sumEquals: "所有數字相加等於目標！",
+            sumClose: "總和接近目標，調整運算符",
+            adjustWithSmall: "用小數字（≤7）來微調結果",
+            halfOrThird: "有數字是目標值的一半或三分之一",
+            default: "檢查是否能用乘法快速接近目標"
+          },
+          step4: {
+            add: "用加法！",
+            subtract: "用減法！",
+            multiply: "用乘法！",
+            divide: "用除法！",
+            divideSwap: "用除法（交換順序）！",
+            default: "只剩兩張卡，試試所有運算符！"
+          },
+          final: "這是最後一步，仔細計算！",
+          normal: "正常進行遊戲"
+        },
+        en: {
+          step1: {
+            hasOne: "If you have a 1, add it to another number first",
+            smallNumbers: "Combine two small numbers (≤7) first",
+            bigNumbers: "For large numbers (≥10), consider subtraction or division",
+            default: "Look for pairs that can be evenly divided"
+          },
+          step2: {
+            bigNumbers: "For large numbers (>10), prefer subtraction or division",
+            hasOne: "Use 1 to fine-tune the result",
+            smallNumbers: "Small numbers (≤7) are good for adjustments",
+            factor: "Look for factors of the target value",
+            default: "Try to create factors of the target"
+          },
+          step3: {
+            sumEquals: "The sum of all cards equals the target!",
+            sumClose: "The total is close to the target, adjust operators",
+            adjustWithSmall: "Use small numbers (≤7) to fine-tune the result",
+            halfOrThird: "You have a number that is half or one-third of the target",
+            default: "Check if multiplication can quickly get close to the target"
+          },
+          step4: {
+            add: "Use addition!",
+            subtract: "Use subtraction!",
+            multiply: "Use multiplication!",
+            divide: "Use division!",
+            divideSwap: "Use division (swap order)!",
+            default: "Only two cards left, try all operators!"
+          },
+          final: "This is the final step, calculate carefully!",
+          normal: "Proceed normally"
+        }
+      };
+      const t = hints[currentLang];
+      switch(currentStep + 1) {
+        case 1:
+          if (sortedCards.includes(1)) return t.step1.hasOne;
+          if (sortedCards.some(x => x <= 7)) return t.step1.smallNumbers;
+          if (sortedCards.some(x => x >= 10)) return t.step1.bigNumbers;
+          return t.step1.default;
+        case 2:
+          if (sortedCards.some(x => x > 10)) return t.step2.bigNumbers;
+          if (sortedCards.some(x => x === 1)) return t.step2.hasOne;
+          if (sortedCards.some(x => x <= 7)) return t.step2.smallNumbers;
+          if (target && sortedCards.some(x => target % x === 0)) return t.step2.factor;
+          return t.step2.default;
+        case 3:
+          if (target && sortedCards.length >= 2) {
+            const sum = sortedCards.reduce((a, b) => a + b, 0);
+            if (sum === target) return t.step3.sumEquals;
+            if (Math.abs(sum - target) <= 2) return t.step3.sumClose;
+            if (sortedCards.some(x => x <= 7 && (target - x >= 0))) return t.step3.adjustWithSmall;
+            if (sortedCards.some(x => x * 2 === target || x * 3 === target)) return t.step3.halfOrThird;
+          }
+          return t.step3.default;
+        case 4:
+          if (sortedCards.length === 2) {
+            const [a, b] = sortedCards;
+            const target = currentTarget;
+            if (target) {
+              if (a + b === target) return t.step4.add;
+              if (Math.abs(a - b) === target) return t.step4.subtract;
+              if (a * b === target) return t.step4.multiply;
+              if (b !== 0 && a % b === 0 && a / b === target) return t.step4.divide;
+              if (a !== 0 && b % a === 0 && b / a === target) return t.step4.divideSwap;
+            }
+            return t.step4.default;
+          }
+          return t.final;
+        default:
+          return t.normal;
+      }
+    }
+
+    function showMessage(text, type) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.className = 'message ' + type;
+    }
+
+    function showSuccessScreen() {
+      playSuccessSound();
+      const usedTime = 60 - timeLeft;
+      const t = translations[currentLang];
+      document.getElementById('successTimeMessage').textContent = t.successTimeMessage(usedTime);
+      const randomMessage = t.successMessages[Math.floor(Math.random() * t.successMessages.length)];
+      document.getElementById('successMessage').textContent = randomMessage;
+      document.getElementById('successModal').style.display = 'flex';
+    }
+
+    function showFailureScreen() {
+      playFailureSound();
+      const t = translations[currentLang];
+      const randomMessage = t.failureMessages[Math.floor(Math.random() * t.failureMessages.length)];
+      document.getElementById('failureMessage').textContent = randomMessage;
+      document.getElementById('failureModal').style.display = 'flex';
+    }
+
+    const SOLUTION_PATTERNS = [
+      {
+        name: 'target_one',
+        generate: () => {
+          const a = Math.floor(Math.random() * 13) + 1;
+          const ops = [a, a, 1, 1, 1];
+          return { ops, target: 1 };
+        }
+      },
+      {
+        name: 'target_two',
+        generate: () => {
+          const a = Math.floor(Math.random() * 6) + 2;
+          const ops = [a, a, a, 1, 1];
+          return { ops, target: 2 };
+        }
+      },
+      {
+        name: 'small_target',
+        generate: () => {
+          const a = Math.floor(Math.random() * 7) + 1;
+          const b = Math.floor(Math.random() * 7) + 1;
+          const c = Math.floor(Math.random() * 7) + 1;
+          const d = 1;
+          const e = 1;
+          const ops = [a, b, c, d, e].sort(() => Math.random() - 0.5);
+          const target = Math.max(3, Math.min(7, a + b + c - d - e));
+          return { ops, target };
+        }
+      },
+      {
+        name: 'big_target',
+        generate: () => {
+          const ops = Array.from({length: 5}, () => Math.floor(Math.random() * 6) + 8);
+          const sum = ops.reduce((a, b) => a + b, 0);
+          const target = Math.max(8, Math.min(13, sum - Math.floor(Math.random() * 5)));
+          return { ops, target };
+        }
+      }
+    ];
+
+    function isValidPuzzle(puzzle) {
+      if (!puzzle.ops.every(x => x >= 1 && x <= 13)) return false;
+      if (puzzle.target < 1 || puzzle.target > 13) return false;
+      const sum = puzzle.ops.reduce((a, b) => a + b, 0);
+      const minPossible = Math.max(1, puzzle.ops.reduce((a, b) => Math.min(a, b), 13));
+      if (sum < puzzle.target) return false;
+      if (minPossible > puzzle.target && puzzle.ops.length > 1) return false;
+      if (puzzle.ops.every(x => x === 1) && puzzle.target !== 5) return false;
+      return true;
+    }
+
+    function parseUrlPuzzle() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const handParam = urlParams.get('hand');
+        const targetParam = urlParams.get('target');
+        if (!handParam || !targetParam) return null;
+        const hand = handParam.split(',').map(str => {
+          const num = parseInt(str.trim(), 10);
+          if (isNaN(num) || num < 1 || num > 13) throw new Error('Invalid card value');
+          return num;
+        });
+        if (hand.length !== 5) throw new Error('Must have exactly 5 cards');
+        const target = parseInt(targetParam.trim(), 10);
+        if (isNaN(target) || target < 1 || target > 13) throw new Error('Invalid target value');
+        if (!isValidPuzzle({ ops: hand, target })) throw new Error('Invalid puzzle combination');
+        return { hand, target };
+      } catch (e) {
+        console.warn('URL puzzle parsing failed:', e.message);
+        return null;
+      }
+    }
+
+    function generateUniquePuzzle() {
+      let attempts = 0;
+      const maxAttempts = 100;
+      while (attempts < maxAttempts) {
+        const isSmallTarget = Math.random() < 0.65;
+        const targetRange = isSmallTarget ? [1, 7] : [8, 13];
+        const smallPatterns = ['target_one', 'target_two', 'small_target'];
+        const bigPatterns = ['big_target'];
+        const availablePatterns = isSmallTarget ? smallPatterns : bigPatterns;
+        const patternName = availablePatterns[Math.floor(Math.random() * availablePatterns.length)];
+        const pattern = SOLUTION_PATTERNS.find(p => p.name === patternName);
+        try {
+          const puzzle = pattern.generate();
+          if (puzzle.target >= targetRange[0] && puzzle.target <= targetRange[1]) {
+            if (isValidPuzzle(puzzle)) {
+              const signature = getPuzzleSignature(puzzle);
+              if (!generatedPuzzles.has(signature)) {
+                generatedPuzzles.add(signature);
+                return puzzle;
+              }
+            }
+          }
+        } catch (e) {}
+        attempts++;
+      }
+      const ops = Array.from({length: 5}, () => Math.floor(Math.random() * 7) + 1);
+      const target = Math.max(1, Math.min(7, ops.reduce((a, b) => a + b, 0) - 3));
+      return { ops, target };
+    }
+
+    function getPuzzleSignature(puzzle) {
+      const sortedOps = [...puzzle.ops].sort((a, b) => a - b);
+      return sortedOps.join(',') + '|' + puzzle.target;
+    }
+
+    function loadNewGame(useSnapshot = false) {
       combo = 0;
-      clearInterval(timer);
-      timer = null;
-      isGameActive = false;
-      showFailureScreen();
+      currentStep = 0;
+      let puzzle = null;
+      if (useSnapshot && currentGameSnapshot) {
+        puzzle = {
+          ops: [...currentGameSnapshot.hand],
+          target: currentGameSnapshot.target
+        };
+      } else {
+        puzzle = generateUniquePuzzle();
+      }
+      const { ops: hand, target } = puzzle;
+      currentTarget = target;
+      originalHand = [...hand];
+      currentPuzzle = {
+        hand: [...hand],
+        target: target
+      };
+      currentGameSnapshot = {
+        target: currentTarget,
+        hand: [...originalHand],
+        score: score,
+        timeLeft: timeLeft
+      };
     }
-  }
-}
-function cancelSelection() {
-clearSelection();
-showMessage(translations[currentLang].messages.canceled, 'info');
-}
-function clearSelection() {
-if (selectedCard1) {
-selectedCard1.classList.remove('selected-first');
-selectedCard1 = null;
-}
-selectedOperator = null;
-document.getElementById('operatorMenu').style.display = 'none';
-}
-function resetHand() {
-if (!isGameActive) return;
-clearSelection();
-const handArea = document.getElementById('handArea');
-handArea.innerHTML = '';
-for (let i = 0; i < originalHand.length; i++) {
-handArea.appendChild(createCard(originalHand[i]));
-}
-currentStep = 0;
-startTimer();
-showMessage(translations[currentLang].messages.resetHand, 'info');
-}
 
-// ===== ✅ 修正：多語言提示（完全本地化）=====
-function showHint() {
-  const cards = Array.from(document.querySelectorAll('.card')).map(card =>
-    parseFloat(card.dataset.value)
-  );
-  if (cards.length === 0) {
-    return translations[currentLang].messages.noCard;
-  }
-  const sortedCards = [...cards].sort((a, b) => a - b);
-  const target = currentTarget;
-
-  // 多語言提示
-  const hints = {
-    zh: {
-      step1: {
-        hasOne: "有1的話，先用1和其他數字相加",
-        smallNumbers: "先合併兩個小數字（≤7）",
-        bigNumbers: "有大數字（≥10）時，考慮用減法或除法",
-        default: "尋找可以整除的數字對"
-      },
-      step2: {
-        bigNumbers: "大數字（>10）建議用減法或除法",
-        hasOne: "1可以用來微調結果",
-        smallNumbers: "小數字（≤7）適合用來調整結果",
-        factor: "尋找目標值的因數",
-        default: "嘗試製造目標值的因數"
-      },
-      step3: {
-        sumEquals: "所有數字相加等於目標！",
-        sumClose: "總和接近目標，調整運算符",
-        adjustWithSmall: "用小數字（≤7）來微調結果",
-        halfOrThird: "有數字是目標值的一半或三分之一",
-        default: "檢查是否能用乘法快速接近目標"
-      },
-      step4: {
-        add: "用加法！",
-        subtract: "用減法！",
-        multiply: "用乘法！",
-        divide: "用除法！",
-        divideSwap: "用除法（交換順序）！",
-        default: "只剩兩張卡，試試所有運算符！"
-      },
-      final: "這是最後一步，仔細計算！",
-      normal: "正常進行遊戲"
-    },
-    en: {
-      step1: {
-        hasOne: "If you have a 1, add it to another number first",
-        smallNumbers: "Combine two small numbers (≤7) first",
-        bigNumbers: "For large numbers (≥10), consider subtraction or division",
-        default: "Look for pairs that can be evenly divided"
-      },
-      step2: {
-        bigNumbers: "For large numbers (>10), prefer subtraction or division",
-        hasOne: "Use 1 to fine-tune the result",
-        smallNumbers: "Small numbers (≤7) are good for adjustments",
-        factor: "Look for factors of the target value",
-        default: "Try to create factors of the target"
-      },
-      step3: {
-        sumEquals: "The sum of all cards equals the target!",
-        sumClose: "The total is close to the target, adjust operators",
-        adjustWithSmall: "Use small numbers (≤7) to fine-tune the result",
-        halfOrThird: "You have a number that is half or one-third of the target",
-        default: "Check if multiplication can quickly get close to the target"
-      },
-      step4: {
-        add: "Use addition!",
-        subtract: "Use subtraction!",
-        multiply: "Use multiplication!",
-        divide: "Use division!",
-        divideSwap: "Use division (swap order)!",
-        default: "Only two cards left, try all operators!"
-      },
-      final: "This is the final step, calculate carefully!",
-      normal: "Proceed normally"
+    function newGame() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      loadNewGame();
+      playReadyGoSound(() => {
+        document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
+        const handArea = document.getElementById('handArea');
+        handArea.innerHTML = '';
+        for (let i = 0; i < originalHand.length; i++) {
+          handArea.appendChild(createCard(originalHand[i]));
+        }
+        startTimer();
+      });
     }
-  };
 
-  const t = hints[currentLang];
-
-  switch(currentStep + 1) {
-    case 1:
-      if (sortedCards.includes(1)) {
-        return t.step1.hasOne;
+    async function shareChallenge() {
+      if (!currentPuzzle) {
+        alert(translations[currentLang].messages.noCard);
+        return;
       }
-      if (sortedCards.some(x => x <= 7)) {
-        return t.step1.smallNumbers;
+      const { hand, target } = currentPuzzle;
+      const cardsStr = hand.join(',');
+      const baseUrl = window.location.href.split('?')[0];
+      let urlWithParams = `${baseUrl}?hand=${cardsStr}&target=${target}`;
+      if (currentLang === 'en') {
+        urlWithParams += '&lang=en';
       }
-      if (sortedCards.some(x => x >= 10)) {
-        return t.step1.bigNumbers;
-      }
-      return t.step1.default;
-    case 2:
-      if (sortedCards.some(x => x > 10)) {
-        return t.step2.bigNumbers;
-      }
-      if (sortedCards.some(x => x === 1)) {
-        return t.step2.hasOne;
-      }
-      if (sortedCards.some(x => x <= 7)) {
-        return t.step2.smallNumbers;
-      }
-      if (target && sortedCards.some(x => target % x === 0)) {
-        return t.step2.factor;
-      }
-      return t.step2.default;
-    case 3:
-      if (target && sortedCards.length >= 2) {
-        const sum = sortedCards.reduce((a, b) => a + b, 0);
-        if (sum === target) {
-          return t.step3.sumEquals;
-        }
-        if (Math.abs(sum - target) <= 2) {
-          return t.step3.sumClose;
-        }
-        if (sortedCards.some(x => x <= 7 && (target - x >= 0))) {
-          return t.step3.adjustWithSmall;
-        }
-        if (sortedCards.some(x => x * 2 === target || x * 3 === target)) {
-          return t.step3.halfOrThird;
-        }
-      }
-      return t.step3.default;
-    case 4:
-      if (sortedCards.length === 2) {
-        const [a, b] = sortedCards;
-        const target = currentTarget;
-        if (target) {
-          if (a + b === target) return t.step4.add;
-          if (Math.abs(a - b) === target) return t.step4.subtract;
-          if (a * b === target) return t.step4.multiply;
-          if (b !== 0 && a % b === 0 && a / b === target) return t.step4.divide;
-          if (a !== 0 && b % a === 0 && b / a === target) return t.step4.divideSwap;
-        }
-        return t.step4.default;
-      }
-      return t.final;
-    default:
-      return t.normal;
-  }
-}
-
-function showMessage(text, type) {
-const msg = document.getElementById('message');
-msg.textContent = text;
-msg.className = 'message ' + type;
-}
-
-// ===== 成功/失敗處理 =====
-function showSuccessScreen() {
-playSuccessSound();
-const usedTime = 60 - timeLeft;
-const t = translations[currentLang];
-document.getElementById('successTimeMessage').textContent = t.successTimeMessage(usedTime);
-const randomMessage = t.successMessages[Math.floor(Math.random() * t.successMessages.length)];
-document.getElementById('successMessage').textContent = randomMessage;
-document.getElementById('successModal').style.display = 'flex';
-}
-function showFailureScreen() {
-playFailureSound();
-const t = translations[currentLang];
-const randomMessage = t.failureMessages[Math.floor(Math.random() * t.failureMessages.length)];
-document.getElementById('failureMessage').textContent = randomMessage;
-document.getElementById('failureModal').style.display = 'flex';
-}
-
-// ===== 題目生成模式 =====
-const SOLUTION_PATTERNS = [
-{
-name: 'target_one',
-generate: () => {
-const a = Math.floor(Math.random() * 13) + 1;
-const ops = [a, a, 1, 1, 1];
-return { ops, target: 1 };
-}
-},
-{
-name: 'target_two',
-generate: () => {
-const a = Math.floor(Math.random() * 6) + 2;
-const ops = [a, a, a, 1, 1];
-return { ops, target: 2 };
-}
-},
-{
-name: 'small_target',
-generate: () => {
-const a = Math.floor(Math.random() * 7) + 1;
-const b = Math.floor(Math.random() * 7) + 1;
-const c = Math.floor(Math.random() * 7) + 1;
-const d = 1;
-const e = 1;
-const ops = [a, b, c, d, e].sort(() => Math.random() - 0.5);
-const target = Math.max(3, Math.min(7, a + b + c - d - e));
-return { ops, target };
-}
-},
-{
-name: 'big_target',
-generate: () => {
-const ops = Array.from({length: 5}, () => Math.floor(Math.random() * 6) + 8);
-const sum = ops.reduce((a, b) => a + b, 0);
-const target = Math.max(8, Math.min(13, sum - Math.floor(Math.random() * 5)));
-return { ops, target };
-}
-}
-];
-
-// ===== 驗證題目 =====
-function isValidPuzzle(puzzle) {
-if (!puzzle.ops.every(x => x >= 1 && x <= 13)) return false;
-if (puzzle.target < 1 || puzzle.target > 13) return false;
-const sum = puzzle.ops.reduce((a, b) => a + b, 0);
-const minPossible = Math.max(1, puzzle.ops.reduce((a, b) => Math.min(a, b), 13));
-if (sum < puzzle.target) return false;
-if (minPossible > puzzle.target && puzzle.ops.length > 1) return false;
-if (puzzle.ops.every(x => x === 1) && puzzle.target !== 5) return false;
-return true;
-}
-
-// ===== 解析 URL 參數 =====
-function parseUrlPuzzle() {
-try {
-const urlParams = new URLSearchParams(window.location.search);
-const handParam = urlParams.get('hand');
-const targetParam = urlParams.get('target');
-if (!handParam || !targetParam) return null;
-const hand = handParam.split(',').map(str => {
-const num = parseInt(str.trim(), 10);
-if (isNaN(num) || num < 1 || num > 13) throw new Error('Invalid card value');
-return num;
-});
-if (hand.length !== 5) throw new Error('Must have exactly 5 cards');
-const target = parseInt(targetParam.trim(), 10);
-if (isNaN(target) || target < 1 || target > 13) throw new Error('Invalid target value');
-if (!isValidPuzzle({ ops: hand, target })) throw new Error('Invalid puzzle combination');
-return { hand, target };
-} catch (e) {
-console.warn('URL puzzle parsing failed:', e.message);
-return null;
-}
-}
-
-// ===== 生成唯一題目 =====
-function generateUniquePuzzle() {
-let attempts = 0;
-const maxAttempts = 100;
-while (attempts < maxAttempts) {
-const isSmallTarget = Math.random() < 0.65;
-const targetRange = isSmallTarget ? [1, 7] : [8, 13];
-const smallPatterns = ['target_one', 'target_two', 'small_target'];
-const bigPatterns = ['big_target'];
-const availablePatterns = isSmallTarget ? smallPatterns : bigPatterns;
-const patternName = availablePatterns[Math.floor(Math.random() * availablePatterns.length)];
-const pattern = SOLUTION_PATTERNS.find(p => p.name === patternName);
-try {
-const puzzle = pattern.generate();
-if (puzzle.target >= targetRange[0] && puzzle.target <= targetRange[1]) {
-if (isValidPuzzle(puzzle)) {
-const signature = getPuzzleSignature(puzzle);
-if (!generatedPuzzles.has(signature)) {
-generatedPuzzles.add(signature);
-return puzzle;
-}
-}
-}
-} catch (e) {}
-attempts++;
-}
-const ops = Array.from({length: 5}, () => Math.floor(Math.random() * 7) + 1);
-const target = Math.max(1, Math.min(7, ops.reduce((a, b) => a + b, 0) - 3));
-return { ops, target };
-}
-function getPuzzleSignature(puzzle) {
-const sortedOps = [...puzzle.ops].sort((a, b) => a - b);
-return sortedOps.join(',') + '|' + puzzle.target;
-}
-
-// ===== 載入新遊戲 =====
-function loadNewGame(useSnapshot = false) {
-combo = 0;
-currentStep = 0;
-let puzzle = null;
-if (useSnapshot && currentGameSnapshot) {
-puzzle = {
-ops: [...currentGameSnapshot.hand],
-target: currentGameSnapshot.target
-};
-} else {
-puzzle = generateUniquePuzzle();
-}
-const { ops: hand, target } = puzzle;
-currentTarget = target;
-originalHand = [...hand];
-currentPuzzle = {
-hand: [...hand],
-target: target
-};
-currentGameSnapshot = {
-target: currentTarget,
-hand: [...originalHand],
-score: score,
-timeLeft: timeLeft
-};
-}
-
-// ===== 新遊戲（換一題）=====
-function newGame() {
-if (timer) {
-clearInterval(timer);
-timer = null;
-}
-loadNewGame();
-playReadyGoSound(() => {
-document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
-const handArea = document.getElementById('handArea');
-handArea.innerHTML = '';
-for (let i = 0; i < originalHand.length; i++) {
-handArea.appendChild(createCard(originalHand[i]));
-}
-startTimer();
-});
-}
-
-// ===== ✅ 修正：動態取得基礎 URL =====
-async function shareChallenge() {
-  if (!currentPuzzle) {
-    alert(translations[currentLang].messages.noCard);
-    return;
-  }
-  const { hand, target } = currentPuzzle;
-  const cardsStr = hand.join(',');
-  
-  // 動態取得當前頁面的基礎 URL（不含查詢參數）
-  const baseUrl = "https://lewiskk0793-netizen.github.io/Math-Royale/";
-  
-  let urlWithParams = `${baseUrl}?hand=${cardsStr}&target=${target}`;
-  if (currentLang === 'en') {
-    urlWithParams += '&lang=en';
-  }
-  
-  const shareText = currentLang === 'en' 
-    ? `【Math Royale Challenge】Use ${cardsStr} to make ${target}! Can you solve it? 👉 ${urlWithParams}`
-    : `【Math Royale 挑戰】用 ${cardsStr} 算出 ${target}！你能解開嗎？👉 ${urlWithParams}`;
-
-  try {
-    await navigator.clipboard.writeText(shareText);
-    const t = translations[currentLang];
-    showMessage(t.lang === 'en' ? '✅ Copied! Share with friends!' : '✅ 已複製！貼上即可邀請朋友挑戰', 'success');
-  } catch (err) {
-    const textArea = document.createElement('textarea');
-    textArea.value = shareText;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-9999px';
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-      const success = document.execCommand('copy');
-      if (success) {
+      const shareText = currentLang === 'en'
+        ? `【Math Royale Challenge】Use ${cardsStr} to make ${target}! Can you solve it? 👉 ${urlWithParams}`
+        : `【Math Royale 挑戰】用 ${cardsStr} 算出 ${target}！你能解開嗎？👉 ${urlWithParams}`;
+      try {
+        await navigator.clipboard.writeText(shareText);
         const t = translations[currentLang];
         showMessage(t.lang === 'en' ? '✅ Copied! Share with friends!' : '✅ 已複製！貼上即可邀請朋友挑戰', 'success');
-      } else {
-        showMessage(currentLang === 'en' ? 'Please copy manually:\n' + shareText : '請手動複製以下文字：\n' + shareText, 'info');
+      } catch (err) {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          const success = document.execCommand('copy');
+          if (success) {
+            const t = translations[currentLang];
+            showMessage(t.lang === 'en' ? '✅ Copied! Share with friends!' : '✅ 已複製！貼上即可邀請朋友挑戰', 'success');
+          } else {
+            showMessage(currentLang === 'en' ? 'Please copy manually:\n' + shareText : '請手動複製以下文字：\n' + shareText, 'info');
+          }
+        } catch (e) {
+          showMessage(currentLang === 'en' ? 'Please copy manually:\n' + shareText : '請手動複製以下文字：\n' + shareText, 'info');
+        }
+        document.body.removeChild(textArea);
       }
-    } catch (e) {
-      showMessage(currentLang === 'en' ? 'Please copy manually:\n' + shareText : '請手動複製以下文字：\n' + shareText, 'info');
+      setTimeout(() => {
+        const msg = document.getElementById('message');
+        if (msg.textContent.includes('✅')) {
+          msg.textContent = translations[currentLang].messageStart;
+          msg.className = 'message info';
+        }
+      }, 3000);
     }
-    document.body.removeChild(textArea);
-  }
-  setTimeout(() => {
-    const msg = document.getElementById('message');
-    if (msg.textContent.includes('✅')) {
-      msg.textContent = translations[currentLang].messageStart;
-      msg.className = 'message info';
+
+    function startGameFromInstructions() {
+      document.getElementById('instructionsModal').style.display = 'none';
+      if (currentGameSnapshot && currentGameSnapshot.hand && currentGameSnapshot.target) {
+        currentTarget = currentGameSnapshot.target;
+        originalHand = [...currentGameSnapshot.hand];
+        currentPuzzle = { hand: [...originalHand], target: currentTarget };
+      } else {
+        loadNewGame();
+      }
+      playReadyGoSound(() => {
+        document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
+        const handArea = document.getElementById('handArea');
+        handArea.innerHTML = '';
+        for (let i = 0; i < originalHand.length; i++) {
+          handArea.appendChild(createCard(originalHand[i]));
+        }
+        startTimer();
+      });
     }
-  }, 3000);
-}
 
-// ===== 從玩法說明開始遊戲（關鍵：使用快照題目或生成新題目）=====
-function startGameFromInstructions() {
-document.getElementById('instructionsModal').style.display = 'none';
-  
-// 優先使用快照中的題目（例如從分享連結載入）
-if (currentGameSnapshot && currentGameSnapshot.hand && currentGameSnapshot.target) {
-currentTarget = currentGameSnapshot.target;
-originalHand = [...currentGameSnapshot.hand];
-currentPuzzle = { hand: [...originalHand], target: currentTarget };
-} else {
-// 否則生成新題目
-loadNewGame();
-}
+    function closeInstructions() {
+      alert(currentLang === 'en' ? 'Please click "Start Game!" button to begin.' : '請點擊「開始遊戲！」按鈕以開始遊戲。');
+    }
 
-playReadyGoSound(() => {
-document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
-const handArea = document.getElementById('handArea');
-handArea.innerHTML = '';
-for (let i = 0; i < originalHand.length; i++) {
-handArea.appendChild(createCard(originalHand[i]));
-}
-startTimer();
-});
-}
+    window.onclick = function(event) {
+      const modal = document.getElementById('instructionsModal');
+      if (event.target === modal) {
+        alert(currentLang === 'en' ? 'Please click "Start Game!" button to begin.' : '請點擊「開始遊戲！」按鈕以開始遊戲。');
+      }
+    }
 
-// ===== Modal 控制 =====
-function closeInstructions() {
-alert(currentLang === 'en' ? 'Please click "Start Game!" button to begin.' : '請點擊「開始遊戲！」按鈕以開始遊戲。');
-}
-window.onclick = function(event) {
-const modal = document.getElementById('instructionsModal');
-if (event.target === modal) {
-alert(currentLang === 'en' ? 'Please click "Start Game!" button to begin.' : '請點擊「開始遊戲！」按鈕以開始遊戲。');
-}
-};
+    function restartGame() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      document.getElementById('successModal').style.display = 'none';
+      document.getElementById('failureModal').style.display = 'none';
+      document.getElementById('handArea').innerHTML = '';
+      document.getElementById('targetCard').textContent = '?';
+      showMessage(translations[currentLang].messageStart, 'info');
+      if (currentGameSnapshot) {
+        currentTarget = currentGameSnapshot.target;
+        originalHand = [...currentGameSnapshot.hand];
+        score = currentGameSnapshot.score;
+        timeLeft = currentGameSnapshot.timeLeft;
+        document.getElementById('score').textContent = score;
+        document.getElementById('timeLeft').textContent = timeLeft;
+      } else {
+        score = 0;
+        combo = 0;
+        currentStep = 0;
+        timeLeft = 60;
+        document.getElementById('score').textContent = '0';
+        document.getElementById('timeLeft').textContent = '60';
+      }
+      playReadyGoSound(() => {
+        document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
+        const handArea = document.getElementById('handArea');
+        handArea.innerHTML = '';
+        for (let i = 0; i < originalHand.length; i++) {
+          handArea.appendChild(createCard(originalHand[i]));
+        }
+        startTimer();
+      });
+    }
 
-// ===== 重新開始 =====
-function restartGame() {
-if (timer) {
-clearInterval(timer);
-timer = null;
-}
-document.getElementById('successModal').style.display = 'none';
-document.getElementById('failureModal').style.display = 'none';
-document.getElementById('handArea').innerHTML = '';
-document.getElementById('targetCard').textContent = '?';
-showMessage(translations[currentLang].messageStart, 'info');
-if (currentGameSnapshot) {
-currentTarget = currentGameSnapshot.target;
-originalHand = [...currentGameSnapshot.hand];
-score = currentGameSnapshot.score;
-timeLeft = currentGameSnapshot.timeLeft;
-document.getElementById('score').textContent = score;
-document.getElementById('timeLeft').textContent = timeLeft;
-} else {
-score = 0;
-combo = 0;
-currentStep = 0;
-timeLeft = 60;
-document.getElementById('score').textContent = '0';
-document.getElementById('timeLeft').textContent = '60';
-}
-playReadyGoSound(() => {
-document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
-const handArea = document.getElementById('handArea');
-handArea.innerHTML = '';
-for (let i = 0; i < originalHand.length; i++) {
-handArea.appendChild(createCard(originalHand[i]));
-}
-startTimer();
-});
-}
+    function continueChallenge() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      document.getElementById('successModal').style.display = 'none';
+      document.getElementById('failureModal').style.display = 'none';
+      currentTarget = null;
+      originalHand = [];
+      score = 0;
+      combo = 0;
+      currentStep = 0;
+      isGameActive = false;
+      timeLeft = 60;
+      document.getElementById('score').textContent = '0';
+      document.getElementById('timeLeft').textContent = '60';
+      document.getElementById('message').textContent = translations[currentLang].messageStart;
+      document.getElementById('message').className = 'message info';
+      document.getElementById('handArea').innerHTML = '';
+      document.getElementById('targetCard').textContent = '?';
+      playReadyGoSound(() => {
+        loadNewGame();
+        document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
+        const handArea = document.getElementById('handArea');
+        handArea.innerHTML = '';
+        for (let i = 0; i < originalHand.length; i++) {
+          handArea.appendChild(createCard(originalHand[i]));
+        }
+        startTimer();
+      });
+    }
 
-// ===== 繼續挑戰 =====
-function continueChallenge() {
-if (timer) {
-clearInterval(timer);
-timer = null;
-}
-document.getElementById('successModal').style.display = 'none';
-document.getElementById('failureModal').style.display = 'none';
-currentTarget = null;
-originalHand = [];
-score = 0;
-combo = 0;
-currentStep = 0;
-isGameActive = false;
-timeLeft = 60;
-document.getElementById('score').textContent = '0';
-document.getElementById('timeLeft').textContent = '60';
-document.getElementById('message').textContent = translations[currentLang].messageStart;
-document.getElementById('message').className = 'message info';
-document.getElementById('handArea').innerHTML = '';
-document.getElementById('targetCard').textContent = '?';
-playReadyGoSound(() => {
-loadNewGame();
-document.getElementById('targetCard').textContent = valueToDisplay(currentTarget);
-const handArea = document.getElementById('handArea');
-handArea.innerHTML = '';
-for (let i = 0; i < originalHand.length; i++) {
-handArea.appendChild(createCard(originalHand[i]));
-}
-startTimer();
-});
-}
+    document.addEventListener('DOMContentLoaded', () => {
+      currentLang = parseUrlLanguage();
+      currentTarget = null;
+      originalHand = [];
+      score = 0;
+      combo = 0;
+      currentStep = 0;
+      isGameActive = false;
+      timeLeft = 60;
+      timer = null;
+      currentGameSnapshot = null;
+      volumeEnabled = true;
+      currentPuzzle = null;
+      document.getElementById('score').textContent = '0';
+      document.getElementById('timeLeft').textContent = '60';
+      document.getElementById('targetCard').textContent = '?';
+      document.getElementById('handArea').innerHTML = '';
+      document.getElementById('successModal').style.display = 'none';
+      document.getElementById('failureModal').style.display = 'none';
+      const urlPuzzle = parseUrlPuzzle();
+      if (urlPuzzle) {
+        currentGameSnapshot = {
+          target: urlPuzzle.target,
+          hand: [...urlPuzzle.hand],
+          score: 0,
+          timeLeft: 60
+        };
+      }
+      updateLanguage();
+      document.getElementById('instructionsModal').style.display = 'flex';
+    });
 
-// ===== 啟動遊戲 =====
-document.addEventListener('DOMContentLoaded', () => {
-  // 解析語言
-  currentLang = parseUrlLanguage();
-  
-  // 初始化狀態
-  currentTarget = null;
-  originalHand = [];
-  score = 0;
-  combo = 0;
-  currentStep = 0;
-  isGameActive = false;
-  timeLeft = 60;
-  timer = null;
-  currentGameSnapshot = null;
-  volumeEnabled = true;
-  currentPuzzle = null;
-
-  document.getElementById('score').textContent = '0';
-  document.getElementById('timeLeft').textContent = '60';
-  document.getElementById('targetCard').textContent = '?';
-  document.getElementById('handArea').innerHTML = '';
-  document.getElementById('successModal').style.display = 'none';
-  document.getElementById('failureModal').style.display = 'none';
-
-  // 解析 URL 題目
-  const urlPuzzle = parseUrlPuzzle();
-  if (urlPuzzle) {
-    currentGameSnapshot = {
-      target: urlPuzzle.target,
-      hand: [...urlPuzzle.hand],
-      score: 0,
-      timeLeft: 60
-    };
-  }
-
-  // 更新語言
-  updateLanguage();
-
-  // 顯示玩法說明
-  document.getElementById('instructionsModal').style.display = 'flex';
-});
-</script>
+    // 覆蓋頂部按鈕行為
+    document.getElementById('helpBtn').addEventListener('click', () => {
+      document.getElementById('instructionsModal').style.display = 'flex';
+    });
+  </script>
 </body>
 </html>
