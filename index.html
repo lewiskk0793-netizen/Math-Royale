@@ -350,7 +350,7 @@ background: #d63031;
 <button class="cancel-btn" onclick="cancelSelection()" id="cancelBtn">取消</button>
 </div>
 <div class="buttons">
-<button id="hintBtn" onclick="showHint()">提示</button>
+<button id="hintBtn" onclick="showMessage(showHint(), 'info')">提示</button>
 <button id="nextBtn" onclick="newGame()">換一題</button>
 <button id="resetBtn" onclick="resetHand()">重來</button>
 <button id="volumeBtn" onclick="toggleVolume()" title="開關音效">🔊</button>
@@ -367,19 +367,10 @@ background: #d63031;
 <div class="instructions">
 <h2 id="instructionsTitle">🎮 玩法說明</h2>
 <ul id="instructionsList">
-<li><strong>目標</strong>：在 60 秒內用 5 張牌算出目標值</li>
-<li><strong>操作</strong>：
-<br>1. 點擊第一張卡
-<br>2. 選擇運算符
-<br>3. 點擊第二張卡 → 自動計算
-</li>
-<li><strong>規則</strong>：
-<br>• 不能產生負數
-<br>• 除法必須整除（無餘數）
-<br>• 不能除以零
-<br>• <strong>不能將兩張相同數值的卡牌相減</strong>
-</li>
-<li><strong>計分</strong>：成功 +100 分 + 剩餘時間 × 10 分</li>
+<li><strong>🎯 目標</strong><br>在 60 秒內用全部 5 張牌算出目標值</li>
+<li><strong>🎮 操作步驟</strong><br>1️⃣ 點擊第一張卡<br>2️⃣ 選擇運算符（+ − × ÷）<br>3️⃣ 點擊第二張卡 → 自動計算</li>
+<li><strong>✅ 允許 / ❌ 禁止</strong><br>✅ 可以使用加、減、乘、除<br>✅ 可以重複使用運算符<br>❌ 不能產生負數<br>❌ 除法必須整除（無餘數）<br>❌ 不能除以零<br>❌ 不能將兩張相同數值的卡牌相減</li>
+<li><strong>🏆 計分</strong><br>成功解題：+100 分<br>剩餘時間：每秒 +10 分</li>
 </ul>
 <p style="text-align:center; margin-top:16px;">
 <button onclick="startGameFromInstructions()" id="startGameBtn">開始遊戲！</button>
@@ -446,10 +437,10 @@ const translations = {
     cancelBtn: "取消",
     instructionsTitle: "🎮 玩法說明",
     instructions: [
-      "<strong>目標</strong>：在 60 秒內用 5 張牌算出目標值",
-      "<strong>操作</strong>：<br>1. 點擊第一張卡<br>2. 選擇運算符<br>3. 點擊第二張卡 → 自動計算",
-      "<strong>規則</strong>：<br>• 不能產生負數<br>• 除法必須整除（無餘數）<br>• 不能除以零<br>• <strong>不能將兩張相同數值的卡牌相減</strong>",
-      "<strong>計分</strong>：成功 +100 分 + 剩餘時間 × 10 分"
+      "<strong>🎯 目標</strong><br>在 60 秒內用全部 5 張牌算出目標值",
+      "<strong>🎮 操作步驟</strong><br>1️⃣ 點擊第一張卡<br>2️⃣ 選擇運算符（+ − × ÷）<br>3️⃣ 點擊第二張卡 → 自動計算",
+      "<strong>✅ 允許 / ❌ 禁止</strong><br>✅ 可以使用加、減、乘、除<br>✅ 可以重複使用運算符<br>❌ 不能產生負數<br>❌ 除法必須整除（無餘數）<br>❌ 不能除以零<br>❌ 不能將兩張相同數值的卡牌相減",
+      "<strong>🏆 計分</strong><br>成功解題：+100 分<br>剩餘時間：每秒 +10 分"
     ],
     startGameBtn: "開始遊戲！",
     successTimeMessage: (time) => `🎉 你花了 ${time} 秒完成！`,
@@ -477,7 +468,21 @@ const translations = {
     shareBtnText: "分享挑戰",
     restartBtnText: "重新開始",
     continueBtnText: "繼續挑戰",
-    volumeBtnTitle: "開關音效"
+    volumeBtnTitle: "開關音效",
+    messages: {
+      cannotSelfOperate: "不能與自己運算！",
+      selectFirstCard: "請先選擇第一張卡！",
+      selectedFirst: "已選擇第一張卡，請選擇運算符",
+      operatorSelected: (op) => `已選擇 "${op}"，請點擊第二張卡`,
+      switchedCard: "已切換為新的第一張卡，請選擇運算符",
+      canceled: "已取消選擇",
+      resetHand: "已重設手牌",
+      noCard: "請先選擇卡牌",
+      subtractIdentical: "❌ 不能將兩張相同數值的卡牌相減！",
+      divideByZero: "❌ 不能除以零！",
+      notDivisible: "❌ 除法結果必須為整數！",
+      negativeResult: "❌ 結果不能為負數！"
+    }
   },
   en: {
     gameTitle: "Math Royale",
@@ -490,10 +495,10 @@ const translations = {
     cancelBtn: "Cancel",
     instructionsTitle: "🎮 How to Play",
     instructions: [
-      "<strong>Goal</strong>: Use 5 cards to reach the target value within 60 seconds",
-      "<strong>How to play</strong>:<br>1. Click the first card<br>2. Choose an operator<br>3. Click the second card → auto-calculate",
-      "<strong>Rules</strong>:<br>• No negative results<br>• Division must be exact (no remainder)<br>• Cannot divide by zero<br>• <strong>Cannot subtract two identical cards</strong>",
-      "<strong>Scoring</strong>: Success +100 points + remaining time × 10 points"
+      "<strong>🎯 Goal</strong><br>Use all 5 cards to reach the target value within 60 seconds",
+      "<strong>🎮 How to Play</strong><br>1️⃣ Click the first card<br>2️⃣ Choose an operator (+ − × ÷)<br>3️⃣ Click the second card → auto-calculate",
+      "<strong>✅ Allowed / ❌ Not Allowed</strong><br>✅ Use +, −, ×, ÷ freely<br>✅ Reuse operators as needed<br>❌ No negative results<br>❌ Division must be exact (no remainder)<br>❌ Cannot divide by zero<br>❌ Cannot subtract two identical cards",
+      "<strong>🏆 Scoring</strong><br>Success: +100 points<br>Bonus: +10 points per second remaining"
     ],
     startGameBtn: "Start Game!",
     successTimeMessage: (time) => `🎉 You completed it in ${time} seconds!`,
@@ -521,7 +526,21 @@ const translations = {
     shareBtnText: "Share Challenge",
     restartBtnText: "Restart",
     continueBtnText: "Continue",
-    volumeBtnTitle: "Toggle Sound"
+    volumeBtnTitle: "Toggle Sound",
+    messages: {
+      cannotSelfOperate: "Cannot operate with itself!",
+      selectFirstCard: "Please select the first card first!",
+      selectedFirst: "First card selected, please choose an operator",
+      operatorSelected: (op) => `Operator "${op}" selected, please click the second card`,
+      switchedCard: "Switched to a new first card, please choose an operator",
+      canceled: "Selection canceled",
+      resetHand: "Hand reset",
+      noCard: "Please select a card first",
+      subtractIdentical: "❌ Cannot subtract two identical cards!",
+      divideByZero: "❌ Cannot divide by zero!",
+      notDivisible: "❌ Division result must be an integer!",
+      negativeResult: "❌ Result cannot be negative!"
+    }
   }
 };
 
@@ -920,7 +939,7 @@ function selectCard(card) {
 if (!isGameActive) return;
 if (selectedOperator !== null) {
 if (card === selectedCard1) {
-showMessage('不能與自己運算！', 'error');
+showMessage(translations[currentLang].messages.cannotSelfOperate, 'error');
 return;
 }
 performCalculation(card);
@@ -930,97 +949,105 @@ if (selectedCard1 === null) {
 selectedCard1 = card;
 card.classList.add('selected-first');
 document.getElementById('operatorMenu').style.display = 'flex';
-showMessage('已選擇第一張卡，請選擇運算符', 'info');
+showMessage(translations[currentLang].messages.selectedFirst, 'info');
 } else if (card === selectedCard1) {
 clearSelection();
-showMessage('已取消選擇', 'info');
+showMessage(translations[currentLang].messages.canceled, 'info');
 } else {
 selectedCard1.classList.remove('selected-first');
 selectedCard1 = card;
 card.classList.add('selected-first');
-showMessage('已切換為新的第一張卡，請選擇運算符', 'info');
+showMessage(translations[currentLang].messages.switchedCard, 'info');
 }
 }
 function selectOperator(op) {
 if (selectedCard1 === null || !isGameActive) {
-showMessage('請先選擇第一張卡！', 'error');
+showMessage(translations[currentLang].messages.selectFirstCard, 'error');
 return;
 }
 selectedOperator = op;
-showMessage('已選擇 "' + op + '"，請點擊第二張卡', 'info');
+showMessage(translations[currentLang].messages.operatorSelected(op), 'info');
 playCalculationSound(op);
 }
 function performCalculation(secondCard) {
-const val1 = parseFloat(selectedCard1.dataset.value);
-const val2 = parseFloat(secondCard.dataset.value);
-let result;
-switch(selectedOperator) {
-case '+':
-result = val1 + val2;
-break;
-case '−':
-if (Math.abs(val1 - val2) < 1e-9) {
-showMessage('❌ 不能將兩張相同數值的卡牌相減！', 'error');
-clearSelection();
-return;
-}
-result = val1 - val2;
-break;
-case '×':
-result = val1 * val2;
-break;
-case '÷':
-if (Math.abs(val2) < 1e-9) {
-showMessage('❌ 不能除以零！', 'error');
-clearSelection();
-return;
-}
-if (Math.abs(val1 % val2) > 1e-9) {
-showMessage('❌ 除法結果必須為整數！', 'error');
-clearSelection();
-return;
-}
-result = val1 / val2;
-break;
-default:
-clearSelection();
-return;
-}
-if (result < 0) {
-showMessage('❌ 結果不能為負數！', 'error');
-clearSelection();
-return;
-}
-selectedCard1.remove();
-secondCard.remove();
-const newCard = createCard(result, true);
-document.getElementById('handArea').appendChild(newCard);
-clearSelection();
-currentStep++;
-playEncouragementSound();
-const remainingCards = document.querySelectorAll('.card');
-if (remainingCards.length === 1) {
-const finalValue = parseFloat(remainingCards[0].dataset.value);
-if (Math.abs(finalValue - currentTarget) < 1e-6) {
-const timeBonus = timeLeft * 10;
-combo++;
-addScore(100, timeBonus, true);
-clearInterval(timer);
-timer = null;
-isGameActive = false;
-showSuccessScreen();
-} else {
-combo = 0;
-clearInterval(timer);
-timer = null;
-isGameActive = false;
-showFailureScreen();
-}
-}
+  const val1 = parseFloat(selectedCard1.dataset.value);
+  const val2 = parseFloat(secondCard.dataset.value);
+  let result;
+  switch(selectedOperator) {
+    case '+':
+      result = val1 + val2;
+      break;
+    case '−':
+      if (Math.abs(val1 - val2) < 1e-9) {
+        showMessage(translations[currentLang].messages.subtractIdentical, 'error');
+        clearSelection();
+        return;
+      }
+      result = val1 - val2;
+      break;
+    case '×':
+      result = val1 * val2;
+      break;
+    case '÷':
+      if (Math.abs(val2) < 1e-9) {
+        showMessage(translations[currentLang].messages.divideByZero, 'error');
+        clearSelection();
+        return;
+      }
+      if (Math.abs(val1 % val2) > 1e-9) {
+        showMessage(translations[currentLang].messages.notDivisible, 'error');
+        clearSelection();
+        return;
+      }
+      result = val1 / val2;
+      break;
+    default:
+      clearSelection();
+      return;
+  }
+  if (result < 0) {
+    showMessage(translations[currentLang].messages.negativeResult, 'error');
+    clearSelection();
+    return;
+  }
+  
+  // 移除卡牌並新增結果
+  selectedCard1.remove();
+  secondCard.remove();
+  const newCard = createCard(result, true);
+  document.getElementById('handArea').appendChild(newCard);
+  clearSelection();
+  currentStep++;
+  
+  // ✅ 關鍵修正：僅在非最後一步時播放鼓勵音效
+  const remainingCardsAfter = document.querySelectorAll('.card').length;
+  if (remainingCardsAfter > 1) {
+    playEncouragementSound();
+  }
+  
+  // 檢查是否完成
+  if (remainingCardsAfter === 1) {
+    const finalValue = parseFloat(document.querySelector('.card').dataset.value);
+    if (Math.abs(finalValue - currentTarget) < 1e-6) {
+      const timeBonus = timeLeft * 10;
+      combo++;
+      addScore(100, timeBonus, true);
+      clearInterval(timer);
+      timer = null;
+      isGameActive = false;
+      showSuccessScreen();
+    } else {
+      combo = 0;
+      clearInterval(timer);
+      timer = null;
+      isGameActive = false;
+      showFailureScreen();
+    }
+  }
 }
 function cancelSelection() {
 clearSelection();
-showMessage('已取消選擇', 'info');
+showMessage(translations[currentLang].messages.canceled, 'info');
 }
 function clearSelection() {
 if (selectedCard1) {
@@ -1040,16 +1067,16 @@ handArea.appendChild(createCard(originalHand[i]));
 }
 currentStep = 0;
 startTimer();
-showMessage('已重設手牌', 'info');
+showMessage(translations[currentLang].messages.resetHand, 'info');
 }
 
-// ===== ✅ 修正：多語言提示 =====
+// ===== ✅ 修正：多語言提示（完全本地化）=====
 function showHint() {
   const cards = Array.from(document.querySelectorAll('.card')).map(card =>
     parseFloat(card.dataset.value)
   );
   if (cards.length === 0) {
-    return currentLang === 'en' ? 'Please select a card first' : '請先選擇卡牌';
+    return translations[currentLang].messages.noCard;
   }
   const sortedCards = [...cards].sort((a, b) => a - b);
   const target = currentTarget;
@@ -1057,7 +1084,6 @@ function showHint() {
   // 多語言提示
   const hints = {
     zh: {
-      noCard: "請先選擇卡牌",
       step1: {
         hasOne: "有1的話，先用1和其他數字相加",
         smallNumbers: "先合併兩個小數字（≤7）",
@@ -1090,7 +1116,6 @@ function showHint() {
       normal: "正常進行遊戲"
     },
     en: {
-      noCard: "Please select a card first",
       step1: {
         hasOne: "If you have a 1, add it to another number first",
         smallNumbers: "Combine two small numbers (≤7) first",
@@ -1373,7 +1398,7 @@ startTimer();
 // ===== ✅ 修正：動態取得基礎 URL =====
 async function shareChallenge() {
   if (!currentPuzzle) {
-    alert(currentLang === 'en' ? 'Failed to get puzzle info' : '無法取得題目資訊');
+    alert(translations[currentLang].messages.noCard);
     return;
   }
   const { hand, target } = currentPuzzle;
